@@ -19,7 +19,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "lint-staged": {
     "*.{js,css,md,json,yml,yaml}": "prettier --write"
   }
