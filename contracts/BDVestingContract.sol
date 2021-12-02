@@ -7,12 +7,7 @@ import "@openzeppelin/contracts/finance/VestingWallet.sol";
 // 1. release() - limit so only the beneficiaryAddress could execute it
 // 2. implement release() which recieves an amount parameter to release specific amount
 contract BDVestingContract is VestingWallet {
-    address beneficiaryAddress =
-        address(0x1d827461beC8BC392E38d48357E065dfceC23553);
-    uint64 startTimestamp = uint64(block.timestamp);
-    uint64 durationSeconds = 3600;
-
-    constructor()
+    constructor(address beneficiaryAddress, uint64 startTimestamp, uint64 durationSeconds)
         VestingWallet(beneficiaryAddress, startTimestamp, durationSeconds)
     {}
 
