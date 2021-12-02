@@ -1,0 +1,7 @@
+node_modules
+contracts/.placeholder
+test/.placeholder
+build
+artifacts
+cache
+hardhat.config.dev.js
