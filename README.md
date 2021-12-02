@@ -4,6 +4,4 @@ This contract is separated from the Blindex's protocol contracts as it's meant t
 
 This makes sure Blindex will always have people helping push it forward and reach the community's goals.
 
-Test commit.
-
 Blindex belongs to no one except its community.
