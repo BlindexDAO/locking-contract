@@ -4,6 +4,6 @@
 - [ ] A new Feature
 - [ ] Techdebt
 
-## What's your PR is all about?
+## What your PR is all about?
 
 ## Any special instructions for the reviewer?
