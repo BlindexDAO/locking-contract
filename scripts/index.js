@@ -4,6 +4,7 @@ const { deployErc20Contract } = require("./erc20");
 
 async function deployDBLockingContract(
   beneficiariesAddresses,
+  fundingAddress,
   startTimestamp,
   durationSeconds,
   cliffDurationSeconds
@@ -11,6 +12,7 @@ async function deployDBLockingContract(
   const factory = await ethers.getContractFactory("BDLockingContract");
   const contract = await factory.deploy(
     beneficiariesAddresses,
+    fundingAddress,
     startTimestamp,
     durationSeconds,
     cliffDurationSeconds
@@ -43,15 +45,15 @@ async function main() {
   const durationSeconds = 900;
   const cliffDurationSeconds = 500;
   // const cliffDurationSeconds = durationSeconds + 1; // Test cliff larger than duration
-  const [erc20, locking] = await Promise.all([
-    deployErc20Contract(signer, erc20TotalSupply),
-    deployDBLockingContract(
-      beneficiariesAddresses,
-      startTimestamp,
-      durationSeconds,
-      cliffDurationSeconds
-    ),
-  ]);
+
+  const erc20 = await deployErc20Contract(signer, erc20TotalSupply);
+  const locking = await deployDBLockingContract(
+    beneficiariesAddresses,
+    erc20.address,
+    startTimestamp,
+    durationSeconds,
+    cliffDurationSeconds
+  );
 
   const transferAmount = erc20TotalSupply;
   await erc20.transfer(locking.address, transferAmount);
@@ -78,6 +80,7 @@ async function main() {
 
   let freed = await locking.freedAmount(erc20.address, allocationTimestamp);
   console.log("actual Freed", freed.toString());
+  console.log("=========================");
 
   allocationTimestamp = Math.ceil(
     startMoment
@@ -94,6 +97,20 @@ async function main() {
 
   freed = await locking.freedAmount(erc20.address, allocationTimestamp);
   console.log("actual Freed", freed.toString());
+  console.log("=========================");
+
+  // TODO: Tests to add - release
+  // Only one of the beneficiaries can call it - first one
+  // Only one of the beneficiaries can call it - middle one
+  // Only one of the beneficiaries can call it - last one
+  // Someone who is not a beneficiar call it - should fail
+  // When the number of tokens ends, it doesn't fail and just give someone the extra token
+
+  // TODO: Tests to add - withdrawLockedTokens
+  // Can only be called by the owner of the contract
+  // When cliff didn't end
+  // When cliff ended but not all the tokens were released
+  // When the cliff ended and also the duration ended
 }
 
 main()
