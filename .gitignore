@@ -5,3 +5,5 @@ build
 artifacts
 cache
 hardhat.config.dev.js
+coverage
+coverage.json
