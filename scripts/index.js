@@ -1,33 +1,16 @@
 const { ethers } = require("hardhat");
 const { deployErc20Contract } = require("./erc20");
 
-async function deployDBLockingContract(
-  beneficiariesAddresses,
-  fundingAddress,
-  startTimestamp,
-  durationSeconds,
-  cliffDurationSeconds
-) {
+async function deployDBLockingContract(beneficiariesAddresses, fundingAddress, startTimestamp, durationSeconds, cliffDurationSeconds) {
   const factory = await ethers.getContractFactory("BDLockingContract");
-  const contract = await factory.deploy(
-    beneficiariesAddresses,
-    fundingAddress,
-    startTimestamp,
-    durationSeconds,
-    cliffDurationSeconds
-  );
+  const contract = await factory.deploy(beneficiariesAddresses, fundingAddress, startTimestamp, durationSeconds, cliffDurationSeconds);
   console.log("BDLockingContract deployed to:", contract.address);
 
   await contract.deployTransaction.wait();
   return contract;
 }
 
-function calcExpectedFreed(
-  totalAllocation,
-  allocationTimestamp,
-  startTimestamp,
-  durationSeconds
-) {
+function calcExpectedFreed(totalAllocation, allocationTimestamp, startTimestamp, durationSeconds) {
   const timePassed = allocationTimestamp - startTimestamp;
   return Math.floor(totalAllocation * (timePassed / durationSeconds));
 }
@@ -40,25 +23,15 @@ async function getCurrentTimestamp() {
 
 async function main() {
   const erc20TotalSupply = 100000;
-  const [owner, treasury, firstBeneficiary, secondBeneficiary] =
-    await ethers.getSigners();
-  const beneficiariesAddresses = [
-    firstBeneficiary.address,
-    secondBeneficiary.address,
-  ];
+  const [owner, treasury, firstBeneficiary, secondBeneficiary] = await ethers.getSigners();
+  const beneficiariesAddresses = [firstBeneficiary.address, secondBeneficiary.address];
 
   const startTimestamp = await getCurrentTimestamp();
   const durationSeconds = 10 * 24 * 60 * 60; // 10 days
   const cliffDurationSeconds = 2 * 24 * 60 * 60; // 2 days
 
   const erc20 = await deployErc20Contract(owner, erc20TotalSupply);
-  const locking = await deployDBLockingContract(
-    beneficiariesAddresses,
-    treasury.address,
-    startTimestamp,
-    durationSeconds,
-    cliffDurationSeconds
-  );
+  const locking = await deployDBLockingContract(beneficiariesAddresses, treasury.address, startTimestamp, durationSeconds, cliffDurationSeconds);
 
   const transferAmount = erc20TotalSupply;
   await erc20.transfer(treasury.address, transferAmount);
@@ -88,12 +61,7 @@ async function main() {
 
   allocationTimestamp += cliffDurationSeconds;
 
-  let expectedFreed = calcExpectedFreed(
-    expectedTotalAllocation,
-    allocationTimestamp,
-    startTimestamp,
-    durationSeconds
-  );
+  let expectedFreed = calcExpectedFreed(expectedTotalAllocation, allocationTimestamp, startTimestamp, durationSeconds);
 
   console.log("timestamp - start()", allocationTimestamp - startTimestamp);
   console.log("expected Freed", expectedFreed);
@@ -102,86 +70,43 @@ async function main() {
   console.log("actual Freed", freed.toString());
   console.log("=============Release - before cliff ends============");
 
-  console.log(
-    "First Beneficiary amount: ",
-    (await erc20.balanceOf(firstBeneficiary.address)).toString()
-  );
-  console.log(
-    "Second Beneficiary amount: ",
-    (await erc20.balanceOf(firstBeneficiary.address)).toString()
-  );
+  console.log("First Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
+  console.log("Second Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
 
   let currentTimestamp = await getCurrentTimestamp();
   console.log("Current timestamp: ", currentTimestamp);
-  console.log(
-    "Increasing block timestamp on the network and releasing amount..."
-  );
+  console.log("Increasing block timestamp on the network and releasing amount...");
   let releaseTimestamp = currentTimestamp + 1 * 24 * 60 * 60; // Adds 1 days to the current timestamp
   console.log("Release timestamp: ", releaseTimestamp);
   await ethers.provider.send("evm_mine", [releaseTimestamp]);
   await locking.connect(firstBeneficiary).release(erc20.address);
 
-  console.log(
-    "Expected released for each beneficiary: ",
-    0 / beneficiariesAddresses.length
-  );
-  console.log(
-    "FIrst Beneficiary amount: ",
-    (await erc20.balanceOf(firstBeneficiary.address)).toString()
-  );
-  console.log(
-    "Second Beneficiary amount: ",
-    (await erc20.balanceOf(firstBeneficiary.address)).toString()
-  );
+  console.log("Expected released for each beneficiary: ", 0 / beneficiariesAddresses.length);
+  console.log("FIrst Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
+  console.log("Second Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
   console.log("=============Release - after cliff ends============");
 
-  console.log(
-    "First Beneficiary amount: ",
-    (await erc20.balanceOf(firstBeneficiary.address)).toString()
-  );
-  console.log(
-    "Second Beneficiary amount: ",
-    (await erc20.balanceOf(firstBeneficiary.address)).toString()
-  );
+  console.log("First Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
+  console.log("Second Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
 
   currentTimestamp = await getCurrentTimestamp();
   console.log("Current timestamp: ", currentTimestamp);
-  console.log(
-    "Increasing block timestamp on the network and releasing amount..."
-  );
+  console.log("Increasing block timestamp on the network and releasing amount...");
   releaseTimestamp = currentTimestamp + cliffDurationSeconds;
   console.log("Release timestamp: ", releaseTimestamp);
   await ethers.provider.send("evm_mine", [releaseTimestamp]);
   await locking.connect(secondBeneficiary).release(erc20.address);
 
-  expectedFreed = calcExpectedFreed(
-    expectedTotalAllocation,
-    releaseTimestamp,
-    startTimestamp,
-    durationSeconds
-  );
-  console.log(
-    "Expected released for each beneficiary: ",
-    expectedFreed / beneficiariesAddresses.length
-  );
-  console.log(
-    "FIrst Beneficiary amount: ",
-    (await erc20.balanceOf(firstBeneficiary.address)).toString()
-  );
-  console.log(
-    "Second Beneficiary amount: ",
-    (await erc20.balanceOf(firstBeneficiary.address)).toString()
-  );
+  expectedFreed = calcExpectedFreed(expectedTotalAllocation, releaseTimestamp, startTimestamp, durationSeconds);
+  console.log("Expected released for each beneficiary: ", expectedFreed / beneficiariesAddresses.length);
+  console.log("FIrst Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
+  console.log("Second Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
   console.log("=============Non Beneficiary Trying to release============");
   try {
     await locking.connect(owner).release(erc20.address);
-    console.log(
-      "YOU FAILED!! Non beneficiary SHOULD NOT be able to release the funds. Even not the owner of the contract"
-    );
+    console.log("YOU FAILED!! Non beneficiary SHOULD NOT be able to release the funds. Even not the owner of the contract");
   } catch (e) {
-    console.log(
-      "GREAT!! Non beneficiary (the owner) tried to call the release function and you stopped it! "
-    );
+    console.log("GREAT!! Non beneficiary (the owner) tried to call the release function and you stopped it! ");
   }
 
   // TODO: Tests to add - release
