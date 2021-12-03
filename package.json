@@ -21,12 +21,13 @@
     "compile": "npx hardhat compile",
     "local": "npx hardhat compile && npx hardhat run --network localhost ./scripts/index.js",
     "test": "npx hardhat test",
-    "node": "npx hardhat node"
+    "node": "npx hardhat node",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "lint-staged": {
-    "*.{js,css,md,json,yml,yaml}": "prettier --write"
+    "*.{js,css,md,json,yml,yaml,sol}": "prettier --write"
   }
 }
