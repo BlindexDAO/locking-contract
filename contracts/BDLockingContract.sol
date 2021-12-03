@@ -118,7 +118,7 @@ contract BDLockingContract is Context, Ownable {
         // Solidity rounds down the numbers when of the them is uint[256], so that we we'll never fail the transaction
         // due to exceeding the amount of avilable tokens. When there will be left so little tokens in the contract, the owner could call
         // withdrawLockedERC20 to extract that as a donation from the beneficiaries :-)
-        // At most, there amount of token that might be left behing is just a little under the number of beneficiaries.
+        // At most, there amount of tokens that might be left behing is just a little under the number of beneficiaries.
         uint256 fairSplitReleasable = releasable / _beneficiaries.length;
 
         for (uint256 index = 0; index < _beneficiaries.length; index++) {
