@@ -187,7 +187,7 @@ contract BDLockingContract is Context, Ownable {
     }
 
     /**
-     * @dev Implementation of the locking formula. This returns the amout freed, as a function of time, for
+     * @dev Implementation of the locking formula. This returns the amount freed, as a function of time, for
      * an asset given its total historical allocation.
      * The behavior is such that after the cliff period a linear freeing curve has been implemented.
      */
