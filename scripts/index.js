@@ -54,7 +54,7 @@ async function main() {
   const erc20 = await deployErc20Contract(owner, erc20TotalSupply);
   const locking = await deployDBLockingContract(
     beneficiariesAddresses,
-    erc20.address,
+    treasury.address,
     startTimestamp,
     durationSeconds,
     cliffDurationSeconds
