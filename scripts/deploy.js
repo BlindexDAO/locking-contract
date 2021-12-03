@@ -1,9 +1,7 @@
 // scripts/deploy.js
 async function main() {
   // We get the contract to deploy
-  const BDLockingContract = await ethers.getContractFactory(
-    "BDLockingContract"
-  );
+  const BDLockingContract = await ethers.getContractFactory("BDLockingContract");
   console.log("Deploying BDLockingContract...");
   const locking = await BDLockingContract.deploy();
   await locking.deployed();
