@@ -20,7 +20,7 @@ contract BDLockingContract is Context, Ownable {
     address private immutable _fundingAddress;
     uint256 private immutable _cliffDurationSeconds;
     uint256 private immutable _startTimestamp;
-    uint256 private immutable _durationSeconds;
+    uint256 private immutable _lockingDurationSeconds;
 
     constructor(
         address[] memory beneficiariesAddresses,
@@ -29,6 +29,7 @@ contract BDLockingContract is Context, Ownable {
         uint256 durationSeconds,
         uint256 cliffDurationSeconds
     ) {
+        require(beneficiariesAddresses.length > 0, "BDLockingContract: You must have at least one beneficiary");
         for (
             uint256 index = 0;
             index < beneficiariesAddresses.length;
@@ -56,7 +57,7 @@ contract BDLockingContract is Context, Ownable {
         _cliffDurationSeconds = cliffDurationSeconds;
         _beneficiaries = beneficiariesAddresses;
         _startTimestamp = startTimestamp;
-        _durationSeconds = durationSeconds;
+        _lockingDurationSeconds = durationSeconds;
         _fundingAddress = erc20FundingAddress;
     }
 
@@ -103,7 +104,7 @@ contract BDLockingContract is Context, Ownable {
      * @dev Getter for the lockup duration.
      */
     function duration() public view returns (uint256) {
-        return _durationSeconds;
+        return _lockingDurationSeconds;
     }
 
     /**
