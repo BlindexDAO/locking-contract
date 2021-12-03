@@ -9,6 +9,8 @@
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@openzeppelin/contracts": "^4.4.0",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.2",
     "hardhat": "^2.7.0",
     "husky": ">=6",
@@ -16,9 +18,11 @@
     "prettier": "^2.4.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky install",
-    "local": "npx hardhat compile && npx hardhat run --network localhost ./scripts/index.js"
+    "compile": "npx hardhat compile",
+    "local": "npx hardhat compile && npx hardhat run --network localhost ./scripts/index.js",
+    "test": "npx hardhat test",
+    "node": "npx hardhat node"
   },
   "keywords": [],
   "author": "",
