@@ -13,6 +13,8 @@ contract BDLockingContract is VestingWallet {
         VestingWallet(beneficiaryAddress, startTimestamp, durationSeconds)
     {
         require(cliffDurationSeconds < durationSeconds, "The duration of the cliff period must end before the entire lockup period");
+        require(durationSeconds < 60 * 60 * 24 * 365 * 2, "The duration of the locking period canoot exceed 2 years");
+        require(startTimestamp <= block.timestamp + 365 days, "The locking period must start within 365 from now");
         _cliffDurationSeconds = cliffDurationSeconds;
     }
 
@@ -22,20 +24,6 @@ contract BDLockingContract is VestingWallet {
     function cliffDuration() public view virtual returns (uint256) {
         return _cliffDurationSeconds;
     }
-
-    // function released(address token)
-    //     public
-    //     view
-    //     virtual
-    //     override
-    //     returns (uint256)
-    // {
-    //     return VestingWallet.released(token);
-    // }
-
-    // function release(address token) public virtual override {
-    //     return VestingWallet.release(token);
-    // }
 
     function freedAmount(address token, uint64 timestamp)
         public
