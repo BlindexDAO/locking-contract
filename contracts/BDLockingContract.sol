@@ -47,7 +47,7 @@ contract BDLockingContract is Context, Ownable {
         );
         require(
             durationSeconds <= 365 * 2 days,
-            "BDLockingContract: The duration of the locking period canoot exceed 2 years"
+            "BDLockingContract: The duration of the locking period cannot exceed 2 years"
         );
         require(
             startTimestamp <= block.timestamp + 365 days,
