@@ -34,10 +34,15 @@ async function main() {
   const signer = createSigner();
 
   const erc20TotalSupply = 100000;
-  const beneficiariesAddresses = [
-    await signer.getAddress(),
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-  ];
+  const [owner, treasury, addr1, addr2] = await ethers.getSigners();
+  console.log("===============");
+  console.log(addr1.address);
+  console.log("===============");
+  const beneficiariesAddresses = [addr1.address, addr2.address];
+  // [
+  //   await signer.getAddress(),
+  //   "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+  // ];
   const startMoment = moment();
   const startTimestamp = Math.ceil(Date.now() / 1000);
   // const startTimestamp = Math.ceil(new Date().setFullYear(new Date().getFullYear() + 2) / 1000); // Test start not within 1 year
@@ -56,7 +61,8 @@ async function main() {
   );
 
   const transferAmount = erc20TotalSupply;
-  await erc20.transfer(locking.address, transferAmount);
+  await erc20.transfer(treasury.address, transferAmount);
+  await erc20.connect(treasury).transfer(locking.address, transferAmount);
 
   let allocationTimestamp = Math.ceil(
     startMoment.add(10, "s").toDate().getTime() / 1000
