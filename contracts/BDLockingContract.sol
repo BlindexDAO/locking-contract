@@ -133,8 +133,6 @@ contract BDLockingContract is Context, Ownable {
      * Emits a {TokensReleased} event.
      */
     function release(address token) external onlyBeneficiary {
-        // TODO: Add protection that only the beneficiaries could call this function
-
         uint256 releasable = freedAmount(token, block.timestamp) -
             released(token);
         _erc20Released[token] += releasable;

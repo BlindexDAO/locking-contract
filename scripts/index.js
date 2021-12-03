@@ -1,4 +1,3 @@
-const moment = require("moment");
 const { ethers } = require("hardhat");
 const { deployErc20Contract } = require("./erc20");
 
@@ -23,35 +22,36 @@ async function deployDBLockingContract(
   return contract;
 }
 
-function createSigner() {
-  const url = "http://localhost:8545";
-  const provider = new ethers.providers.JsonRpcProvider(url);
-  const signer = provider.getSigner();
-  return signer;
+function calcExpectedFreed(
+  totalAllocation,
+  allocationTimestamp,
+  startTimestamp,
+  durationSeconds
+) {
+  const timePassed = allocationTimestamp - startTimestamp;
+  return Math.floor(totalAllocation * (timePassed / durationSeconds));
+}
+
+async function getCurrentTimestamp() {
+  const blockNumber = await ethers.provider.getBlockNumber();
+  const currentBlock = await ethers.provider.getBlock(blockNumber);
+  return currentBlock.timestamp;
 }
 
 async function main() {
-  const signer = createSigner();
-
   const erc20TotalSupply = 100000;
-  const [owner, treasury, addr1, addr2] = await ethers.getSigners();
-  console.log("===============");
-  console.log(addr1.address);
-  console.log("===============");
-  const beneficiariesAddresses = [addr1.address, addr2.address];
-  // [
-  //   await signer.getAddress(),
-  //   "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-  // ];
-  const startMoment = moment();
-  const startTimestamp = Math.ceil(Date.now() / 1000);
-  // const startTimestamp = Math.ceil(new Date().setFullYear(new Date().getFullYear() + 2) / 1000); // Test start not within 1 year
-  // const durationSeconds = 60 * 60 * 24 * 365 * 2 + 1; // Test duration less than 2 years
-  const durationSeconds = 900;
-  const cliffDurationSeconds = 500;
-  // const cliffDurationSeconds = durationSeconds + 1; // Test cliff larger than duration
+  const [owner, treasury, firstBeneficiary, secondBeneficiary] =
+    await ethers.getSigners();
+  const beneficiariesAddresses = [
+    firstBeneficiary.address,
+    secondBeneficiary.address,
+  ];
 
-  const erc20 = await deployErc20Contract(signer, erc20TotalSupply);
+  const startTimestamp = await getCurrentTimestamp();
+  const durationSeconds = 10 * 24 * 60 * 60; // 10 days
+  const cliffDurationSeconds = 2 * 24 * 60 * 60; // 2 days
+
+  const erc20 = await deployErc20Contract(owner, erc20TotalSupply);
   const locking = await deployDBLockingContract(
     beneficiariesAddresses,
     erc20.address,
@@ -64,19 +64,17 @@ async function main() {
   await erc20.transfer(treasury.address, transferAmount);
   await erc20.connect(treasury).transfer(locking.address, transferAmount);
 
-  let allocationTimestamp = Math.ceil(
-    startMoment.add(10, "s").toDate().getTime() / 1000
-  );
+  let allocationTimestamp = startTimestamp + 10;
 
   console.log("expected start", startTimestamp);
   console.log("actual start", (await locking.start()).toString());
-  console.log("=========================");
+  console.log("============Duration=============");
   console.log("expected durationSeconds", durationSeconds.toString());
   console.log("actual duration", (await locking.duration()).toString());
-  console.log("=========================");
+  console.log("============Cliff=============");
   console.log("expected cliff", cliffDurationSeconds);
   console.log("actual cliff", (await locking.cliffDuration()).toString());
-  console.log("=========================");
+  console.log("============freedAmount - before cliff's end=============");
 
   const expectedTotalAllocation = transferAmount;
 
@@ -86,30 +84,107 @@ async function main() {
 
   let freed = await locking.freedAmount(erc20.address, allocationTimestamp);
   console.log("actual Freed", freed.toString());
-  console.log("=========================");
+  console.log("===========freedAmount - after cliff's end==============");
 
-  allocationTimestamp = Math.ceil(
-    startMoment
-      .add(cliffDurationSeconds + 10, "s")
-      .toDate()
-      .getTime() / 1000
+  allocationTimestamp += cliffDurationSeconds;
+
+  let expectedFreed = calcExpectedFreed(
+    expectedTotalAllocation,
+    allocationTimestamp,
+    startTimestamp,
+    durationSeconds
   );
-  const expectedFreed =
-    (expectedTotalAllocation * (allocationTimestamp - startTimestamp)) /
-    durationSeconds;
 
   console.log("timestamp - start()", allocationTimestamp - startTimestamp);
   console.log("expected Freed", expectedFreed);
 
   freed = await locking.freedAmount(erc20.address, allocationTimestamp);
   console.log("actual Freed", freed.toString());
-  console.log("=========================");
+  console.log("=============Release - before cliff ends============");
+
+  console.log(
+    "First Beneficiary amount: ",
+    (await erc20.balanceOf(firstBeneficiary.address)).toString()
+  );
+  console.log(
+    "Second Beneficiary amount: ",
+    (await erc20.balanceOf(firstBeneficiary.address)).toString()
+  );
+
+  let currentTimestamp = await getCurrentTimestamp();
+  console.log("Current timestamp: ", currentTimestamp);
+  console.log(
+    "Increasing block timestamp on the network and releasing amount..."
+  );
+  let releaseTimestamp = currentTimestamp + 1 * 24 * 60 * 60; // Adds 1 days to the current timestamp
+  console.log("Release timestamp: ", releaseTimestamp);
+  await ethers.provider.send("evm_mine", [releaseTimestamp]);
+  await locking.connect(firstBeneficiary).release(erc20.address);
+
+  console.log(
+    "Expected released for each beneficiary: ",
+    0 / beneficiariesAddresses.length
+  );
+  console.log(
+    "FIrst Beneficiary amount: ",
+    (await erc20.balanceOf(firstBeneficiary.address)).toString()
+  );
+  console.log(
+    "Second Beneficiary amount: ",
+    (await erc20.balanceOf(firstBeneficiary.address)).toString()
+  );
+  console.log("=============Release - after cliff ends============");
+
+  console.log(
+    "First Beneficiary amount: ",
+    (await erc20.balanceOf(firstBeneficiary.address)).toString()
+  );
+  console.log(
+    "Second Beneficiary amount: ",
+    (await erc20.balanceOf(firstBeneficiary.address)).toString()
+  );
+
+  currentTimestamp = await getCurrentTimestamp();
+  console.log("Current timestamp: ", currentTimestamp);
+  console.log(
+    "Increasing block timestamp on the network and releasing amount..."
+  );
+  releaseTimestamp = currentTimestamp + cliffDurationSeconds;
+  console.log("Release timestamp: ", releaseTimestamp);
+  await ethers.provider.send("evm_mine", [releaseTimestamp]);
+  await locking.connect(secondBeneficiary).release(erc20.address);
+
+  expectedFreed = calcExpectedFreed(
+    expectedTotalAllocation,
+    releaseTimestamp,
+    startTimestamp,
+    durationSeconds
+  );
+  console.log(
+    "Expected released for each beneficiary: ",
+    expectedFreed / beneficiariesAddresses.length
+  );
+  console.log(
+    "FIrst Beneficiary amount: ",
+    (await erc20.balanceOf(firstBeneficiary.address)).toString()
+  );
+  console.log(
+    "Second Beneficiary amount: ",
+    (await erc20.balanceOf(firstBeneficiary.address)).toString()
+  );
+  console.log("=============Non Beneficiary Trying to release============");
+  try {
+    await locking.connect(owner).release(erc20.address);
+    console.log(
+      "YOU FAILED!! Non beneficiary SHOULD NOT be able to release the funds. Even not the owner of the contract"
+    );
+  } catch (e) {
+    console.log(
+      "GREAT!! Non beneficiary (the owner) tried to call the release function and you stopped it! "
+    );
+  }
 
   // TODO: Tests to add - release
-  // Only one of the beneficiaries can call it - first one
-  // Only one of the beneficiaries can call it - middle one
-  // Only one of the beneficiaries can call it - last one
-  // Someone who is not a beneficiar call it - should fail
   // When the number of tokens ends, it doesn't fail and just give someone the extra token
 
   // TODO: Tests to add - withdrawLockedTokens
@@ -117,6 +192,11 @@ async function main() {
   // When cliff didn't end
   // When cliff ended but not all the tokens were released
   // When the cliff ended and also the duration ended
+
+  // TODO: Constractor tests
+  // const startTimestamp = Math.ceil(new Date().setFullYear(new Date().getFullYear() + 2) / 1000); // Test start not within 1 year
+  // const durationSeconds = 60 * 60 * 24 * 365 * 2 + 1; // Test duration less than 2 years
+  // const cliffDurationSeconds = durationSeconds + 1; // Test cliff larger than duration
 }
 
 main()
