@@ -14,7 +14,7 @@ describe("BDLockingContract", function () {
     const provider = new MockProvider();
     this.signer = provider.getSigner();
     const [wallet] = provider.getWallets();
-    this.walletAddress = wallet.address;
+    this.walletsAddresses = [wallet.address];
   });
 
   const startTimestamp = Math.ceil(Date.now() / 1000);
@@ -24,7 +24,7 @@ describe("BDLockingContract", function () {
 
   beforeEach(async function () {
     this.lockingContract = await this.BDLockingContract.deploy(
-      this.walletAddress,
+      this.walletsAddresses,
       startTimestamp,
       durationSeconds,
       cliffDurationSeconds
@@ -55,7 +55,7 @@ describe("BDLockingContract", function () {
     expect(lockingContractBalance).to.equal(amount);
   });
 
-  xit("should transfer free all deposit tokens when duartion from start is over", async function () {
+  it("should transfer free all deposit tokens when duartion from start is over", async function () {
     const totalLockAmount = 150000;
     await this.erc20Contract.transfer(
       this.lockingContract.address,
