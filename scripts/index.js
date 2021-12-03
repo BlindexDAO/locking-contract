@@ -32,7 +32,10 @@ async function main() {
   const signer = createSigner();
 
   const erc20TotalSupply = 100000;
-  const beneficiariesAddresses = await signer.getAddress();
+  const beneficiariesAddresses = [
+    await signer.getAddress(),
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+  ];
   const startMoment = moment();
   const startTimestamp = Math.ceil(Date.now() / 1000);
   // const startTimestamp = Math.ceil(new Date().setFullYear(new Date().getFullYear() + 2) / 1000); // Test start not within 1 year
@@ -43,7 +46,7 @@ async function main() {
   const [erc20, locking] = await Promise.all([
     deployErc20Contract(signer, erc20TotalSupply),
     deployDBLockingContract(
-      [beneficiariesAddresses],
+      beneficiariesAddresses,
       startTimestamp,
       durationSeconds,
       cliffDurationSeconds
