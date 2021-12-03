@@ -22,7 +22,7 @@
     "local": "npx hardhat compile && npx hardhat run --network localhost ./scripts/index.js",
     "test": "npx hardhat test",
     "node": "npx hardhat node",
-    "format": "prettier --write ."
+    "format": "prettier --write . --loglevel silent"
   },
   "keywords": [],
   "author": "",
