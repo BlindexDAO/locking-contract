@@ -1,13 +1,13 @@
 // scripts/deploy.js
 async function main() {
   // We get the contract to deploy
-  const BDVestingContract = await ethers.getContractFactory(
-    "BDVestingContract"
+  const BDLockingContract = await ethers.getContractFactory(
+    "BDLockingContract"
   );
-  console.log("Deploying BDVestingContract...");
-  const vesting = await BDVestingContract.deploy();
-  await vesting.deployed();
-  console.log("BDVestingContract deployed to:", vesting.address);
+  console.log("Deploying BDLockingContract...");
+  const locking = await BDLockingContract.deploy();
+  await locking.deployed();
+  console.log("BDLockingContract deployed to:", locking.address);
 }
 
 main()
