@@ -20,3 +20,5 @@ jobs:
           fetch-depth: 0
       - name: Prettify code
         uses: creyD/prettier_action@v4.0
+        with:
+          prettier_options: --write **/*.*
