@@ -119,6 +119,8 @@ async function main() {
   // When the cliff ended and also the duration ended
 
   // TODO: Constractor tests
+  // Some Beneficiary in the list is zero address
+  // The list of Beneficiaries is empty
   // const startTimestamp = Math.ceil(new Date().setFullYear(new Date().getFullYear() + 2) / 1000); // Test start not within 1 year
   // const durationSeconds = 60 * 60 * 24 * 365 * 2 + 1; // Test duration less than 2 years
   // const cliffDurationSeconds = durationSeconds + 1; // Test cliff larger than duration
