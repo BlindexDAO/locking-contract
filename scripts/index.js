@@ -54,7 +54,7 @@ async function main() {
   const startMoment = moment();
   const startTimestamp = Math.ceil(Date.now() / 1000);
   // const startTimestamp = Math.ceil(new Date().setFullYear(new Date().getFullYear() + 2) / 1000); // Test start not within 1 year
-  // const durationSeconds = 60 * 60 * 24 * 365 * 3 + 1; // Test duration less than 2 years
+  // const durationSeconds = 60 * 60 * 24 * 365 * 2 + 1; // Test duration less than 2 years
   const durationSeconds = 900;
   const cliffDurationSeconds = 500;
   // const cliffDurationSeconds = durationSeconds + 1; // Test cliff larger than duration

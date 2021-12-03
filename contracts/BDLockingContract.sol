@@ -13,7 +13,7 @@ contract BDLockingContract is VestingWallet {
         VestingWallet(beneficiaryAddress, startTimestamp, durationSeconds)
     {
         require(cliffDurationSeconds < durationSeconds, "The duration of the cliff period must end before the entire lockup period");
-        require(durationSeconds < 365 * 2 days, "The duration of the locking period canoot exceed 2 years");
+        require(durationSeconds <= 365 * 2 days, "The duration of the locking period canoot exceed 2 years");
         require(startTimestamp <= block.timestamp + 365 days, "The locking period must start within 365 from now");
         
         _cliffDurationSeconds = cliffDurationSeconds;
