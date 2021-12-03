@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./utils/Math.sol";
 
 // 1. release() - limit so only the beneficiaryAddress could execute it
 // 2. implement release() which recieves an amount parameter to release specific amount
@@ -31,15 +30,8 @@ contract BDLockingContract is Context, Ownable {
         uint256 cliffDurationSeconds
     ) {
         require(beneficiariesAddresses.length > 0, "BDLockingContract: You must have at least one beneficiary");
-        for (
-            uint256 index = 0;
-            index < beneficiariesAddresses.length;
-            index++
-        ) {
-            require(
-                beneficiariesAddresses[index] != address(0),
-                "BDLockingContract: A beneficiary is zero address"
-            );
+        for (uint256 index = 0; index < beneficiariesAddresses.length; index++) {
+            require(beneficiariesAddresses[index] != address(0), "BDLockingContract: A beneficiary is zero address");
         }
 
         require(
@@ -57,18 +49,11 @@ contract BDLockingContract is Context, Ownable {
     modifier onlyBeneficiary() {
         bool isBeneficiary = false;
 
-        for (
-            uint256 index = 0;
-            index < _beneficiaries.length && !isBeneficiary;
-            index++
-        ) {
+        for (uint256 index = 0; index < _beneficiaries.length && !isBeneficiary; index++) {
             isBeneficiary = _beneficiaries[index] == msg.sender;
         }
 
-        require(
-            isBeneficiary,
-            "BDLockingContract: You are not one of the allowed beneficiaries, you cannot execute this function"
-        );
+        require(isBeneficiary, "BDLockingContract: You are not one of the allowed beneficiaries, you cannot execute this function");
         _;
     }
 
@@ -127,22 +112,17 @@ contract BDLockingContract is Context, Ownable {
      * Emits a {TokensReleased} event.
      */
     function release(address token) external onlyBeneficiary {
-        uint256 releasable = freedAmount(token, block.timestamp) -
-            released(token);
+        uint256 releasable = freedAmount(token, block.timestamp) - released(token);
         _erc20Released[token] += releasable;
 
-        // If the relesable amount does not divid by the amount of beneficiaries, we'll round down the numbers so that we we'll never fail the transaction
+        // Solidity rounds down the numbers when of the them is uint[256], so that we we'll never fail the transaction
         // due to exceeding the amount of avilable tokens. When there will be left so little tokens in the contract, the owner could call
         // withdrawLockedERC20 to extract that as a donation from the beneficiaries :-)
         // At most, there amount of token that might be left behing is just a little under the number of beneficiaries.
-        uint256 fairSplitReleasable = Math.floorDiv(releasable, _beneficiaries.length);
+        uint256 fairSplitReleasable = releasable / _beneficiaries.length;
 
         for (uint256 index = 0; index < _beneficiaries.length; index++) {
-            SafeERC20.safeTransfer(
-                IERC20(token),
-                _beneficiaries[index],
-                fairSplitReleasable
-            );
+            SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
         }
 
         emit ERC20Released(token, releasable);
@@ -152,18 +132,10 @@ contract BDLockingContract is Context, Ownable {
      * @dev Withdraw all the locked ERC20 tokens back to the funding address
      */
     function withdrawLockedERC20(address token) external onlyOwner {
-        uint256 withdrawalAmount = totalAllocation(token) -
-            freedAmount(token, block.timestamp);
-        require(
-            withdrawalAmount > 0,
-            "BDLockingContract: There is nothing left to withdraw"
-        );
+        uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
+        require(withdrawalAmount > 0, "BDLockingContract: There is nothing left to withdraw");
 
-        SafeERC20.safeTransfer(
-            IERC20(token),
-            _fundingAddress,
-            withdrawalAmount
-        );
+        SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
 
         emit ERC20Withdrawal(token, withdrawalAmount);
     }
@@ -171,11 +143,7 @@ contract BDLockingContract is Context, Ownable {
     /**
      * @dev Calculates the amount of tokens that has already been freed.
      */
-    function freedAmount(address token, uint256 timestamp)
-        public
-        view
-        returns (uint256)
-    {
+    function freedAmount(address token, uint256 timestamp) public view returns (uint256) {
         return _freeingSchedule(totalAllocation(token), timestamp);
     }
 
@@ -184,11 +152,7 @@ contract BDLockingContract is Context, Ownable {
      * an asset given its total historical allocation.
      * The behavior is such that after the cliff period a linear freeing curve has been implemented.
      */
-    function _freeingSchedule(uint256 totalTokenAllocation, uint256 timestamp)
-        private
-        view
-        returns (uint256)
-    {
+    function _freeingSchedule(uint256 totalTokenAllocation, uint256 timestamp) private view returns (uint256) {
         if (timestamp < start() + cliffDuration()) {
             return 0;
         } else if (timestamp > start() + lockingDuration()) {
