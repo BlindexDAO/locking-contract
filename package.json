@@ -17,7 +17,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "local": "npx hardhat compile && npx hardhat run --network localhost ./scripts/index.js"
   },
   "keywords": [],
   "author": "",
