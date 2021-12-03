@@ -18,13 +18,6 @@ jobs:
           ref: ${{ github.head_ref }}
           # This is important to fetch the changes to the previous commit
           fetch-depth: 0
-      - name: Setup Node
-        uses: actions/setup-node@v2
-        with:
-          node-version: "16.x"
-          cache: "npm"
-      - name: Install
-        run: npm install
       - name: Prettify code
         uses: creyD/prettier_action@v4.1
         with:
