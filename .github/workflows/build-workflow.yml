@@ -21,4 +21,5 @@ jobs:
       - name: Prettify code
         uses: creyD/prettier_action@v4.0
         with:
+          prettier_plugins: prettier-plugin-solidity
           prettier_options: --write **/*
