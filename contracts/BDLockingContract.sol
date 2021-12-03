@@ -45,14 +45,6 @@ contract BDLockingContract is Context, Ownable {
             cliffDurationSeconds < durationSeconds,
             "BDLockingContract: The duration of the cliff period must end before the entire lockup period"
         );
-        require(
-            durationSeconds <= 365 * 2 days,
-            "BDLockingContract: The duration of the locking period canoot exceed 2 years"
-        );
-        require(
-            startTimestamp <= block.timestamp + 365 days,
-            "BDLockingContract: The locking period must start within 365 from now"
-        );
 
         _cliffDurationSeconds = cliffDurationSeconds;
         _beneficiaries = beneficiariesAddresses;
@@ -103,7 +95,7 @@ contract BDLockingContract is Context, Ownable {
     /**
      * @dev Getter for the lockup duration.
      */
-    function duration() public view returns (uint256) {
+    function lockingDuration() public view returns (uint256) {
         return _lockingDurationSeconds;
     }
 
@@ -196,12 +188,12 @@ contract BDLockingContract is Context, Ownable {
         view
         returns (uint256)
     {
-        if (timestamp < start() || timestamp < start() + cliffDuration()) {
+        if (timestamp < start() + cliffDuration()) {
             return 0;
-        } else if (timestamp > start() + duration()) {
+        } else if (timestamp > start() + lockingDuration()) {
             return totalTokenAllocation;
         } else {
-            return (totalTokenAllocation * (timestamp - start())) / duration();
+            return (totalTokenAllocation * (timestamp - start())) / lockingDuration();
         }
     }
 }
