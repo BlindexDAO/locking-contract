@@ -134,6 +134,7 @@ contract BDLockingContract is Context, Ownable {
         // If the relesable amount does not divid by the amount of beneficiaries, we'll round down the numbers so that we we'll never fail the transaction
         // due to exceeding the amount of avilable tokens. When there will be left so little tokens in the contract, the owner could call
         // withdrawLockedERC20 to extract that as a donation from the beneficiaries :-)
+        // At most, there amount of token that might be left behing is just a little below the number of beneficiaries.
         uint256 fairSplitReleasable = Math.floorDiv(releasable, _beneficiaries.length);
 
         for (uint256 index = 0; index < _beneficiaries.length; index++) {
