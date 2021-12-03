@@ -137,7 +137,6 @@ contract BDLockingContract is Context, Ownable {
         uint256 releasable = freedAmount(token, block.timestamp) -
             released(token);
         _erc20Released[token] += releasable;
-        emit ERC20Released(token, releasable);
 
         // TODO: Fix the ceilling so that the transaction won't fail
         uint256 fairSplitReleasable = Math.ceilDiv(
@@ -152,6 +151,8 @@ contract BDLockingContract is Context, Ownable {
                 fairSplitReleasable
             );
         }
+
+        emit ERC20Released(token, releasable);
     }
 
     /**
@@ -170,6 +171,8 @@ contract BDLockingContract is Context, Ownable {
             _fundingAddress,
             withdrawalAmount
         );
+
+        emit ERC20Withdrawal(token, withdrawalAmount);
     }
 
     /**
