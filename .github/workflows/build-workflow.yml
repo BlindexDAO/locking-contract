@@ -22,7 +22,7 @@ jobs:
           node-version: "16.x"
           cache: npm
       - name: Install Prettier
-        run: npm install prettier prettier-plugin-solidity
+        run: npm ci prettier prettier-plugin-solidity
       - name: Prettify code
         run: npm run format
       - name: Commit changes
