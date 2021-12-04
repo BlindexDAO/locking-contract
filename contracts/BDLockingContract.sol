@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 // 1. release() - limit so only the beneficiaryAddress could execute it
 // 2. implement release() which recieves an amount parameter to release specific amount
 contract BDLockingContract is Context, Ownable {
-    event ERC20Released(address indexed token, uint256 amount);
+    event ERC20Released(address indexed token, address to, uint256 amount);
     event ERC20ZeroReleased(address indexed token);
     event ERC20Withdrawal(address indexed token, uint256 amount);
 
@@ -132,9 +132,8 @@ contract BDLockingContract is Context, Ownable {
             for (uint256 index = 0; index < _beneficiaries.length; index++) {
                 SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
                 _erc20Released[token] += fairSplitReleasable;
+                emit ERC20Released(token, _beneficiaries[index], fairSplitReleasable);
             }
-
-            emit ERC20Released(token, releasable);
         }
     }
 
