@@ -115,10 +115,10 @@ contract BDLockingContract is Context, Ownable {
         uint256 releasable = freedAmount(token, block.timestamp) - released(token);
         _erc20Released[token] += releasable;
 
-        // Solidity rounds down the numbers when of the them is uint[256], so that we we'll never fail the transaction
-        // due to exceeding the amount of avilable tokens. When there will be left so little tokens in the contract we can either keep
-        // them there, or trasnfer more funds to the contract so that the remaining funds will be divided equaly between the beneficiaries.
-        // At most, there amount of tokens that might be left behing is just a little under the number of beneficiaries.
+        // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
+        // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
+        // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
+        // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
         uint256 fairSplitReleasable = releasable / _beneficiaries.length;
 
         for (uint256 index = 0; index < _beneficiaries.length; index++) {
