@@ -1,11 +1,11 @@
-// contracts/BDVestingContract.sol
+// contracts/BDLockingContract.sol
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // 1. release() - limit so only the beneficiaryAddress could execute it
@@ -115,8 +115,11 @@ contract BDLockingContract is Context, Ownable {
         uint256 releasable = freedAmount(token, block.timestamp) - released(token);
         _erc20Released[token] += releasable;
 
-        // TODO: Fix the ceilling so that the transaction won't fail
-        uint256 fairSplitReleasable = Math.ceilDiv(releasable, _beneficiaries.length);
+        // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
+        // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
+        // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
+        // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
+        uint256 fairSplitReleasable = releasable / _beneficiaries.length;
 
         for (uint256 index = 0; index < _beneficiaries.length; index++) {
             SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
