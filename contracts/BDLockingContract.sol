@@ -123,8 +123,6 @@ contract BDLockingContract is Context, Ownable {
         if (releasable == 0) {
             emit ERC20ZeroReleased(token);
         } else {
-            _erc20Released[token] += releasable;
-
             // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
             // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
             // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
@@ -133,6 +131,7 @@ contract BDLockingContract is Context, Ownable {
 
             for (uint256 index = 0; index < _beneficiaries.length; index++) {
                 SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
+                _erc20Released[token] += fairSplitReleasable;
             }
 
             emit ERC20Released(token, releasable);
