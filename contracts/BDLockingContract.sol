@@ -130,20 +130,24 @@ contract BDLockingContract is Context, Ownable {
 
     /**
      * @dev Withdraw all the locked ERC20 tokens back to the funding address
-        @param token - the address of the token to withdraw
-        @param withdrawBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points
+     * @param token - the address of the token to withdraw
+     * @param withdrawalBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points.
      */
-    function withdrawLockedERC20(address token, uint256 withdrawBasisPoints) external onlyOwner {
+    function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external onlyOwner {
         require(
-            withdrawBasisPoints >= 0 && withdrawBasisPoints <= 10000,
+            withdrawalBasisPoints >= 0 && withdrawalBasisPoints <= 10000,
             "The percentage of the withdrawal must be between 0 to 10,000 basis points"
         );
 
         uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
         require(withdrawalAmount > 0, "BDLockingContract: There is nothing left to withdraw");
 
-        withdrawalAmount = SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
+        // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
+        // Therefore, we'll multiply first and only then divid to improve precision.
+        // Before solidity 0.8 is was safer to first divid and then multiply (or using Openzeppelin's SafeMath library)
+        withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
 
+        SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
         emit ERC20Withdrawal(token, withdrawalAmount);
     }
 
