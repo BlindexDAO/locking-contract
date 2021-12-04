@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 // 2. implement release() which recieves an amount parameter to release specific amount
 contract BDLockingContract is Context, Ownable {
     event ERC20Released(address indexed token, uint256 amount);
+    event ERC20ZeroReleased(address indexed token);
     event ERC20Withdrawal(address indexed token, uint256 amount);
 
     mapping(address => uint256) private _erc20Released;
@@ -119,7 +120,9 @@ contract BDLockingContract is Context, Ownable {
         // back locked funds
         releasable = Math.min(IERC20(token).balanceOf(address(this)), releasable);
 
-        if (releasable > 0) {
+        if (releasable == 0) {
+            emit ERC20ZeroReleased(token);
+        } else {
             _erc20Released[token] += releasable;
 
             // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
