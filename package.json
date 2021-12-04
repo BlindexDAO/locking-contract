@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {
-    "moment": "^2.29.1"
-  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@openzeppelin/contracts": "^4.4.0",
@@ -15,20 +12,22 @@
     "hardhat": "^2.7.0",
     "husky": ">=6",
     "lint-staged": ">=10",
-    "prettier": "^2.4.1",
-    "solidity-coverage": "^0.7.17"
+    "solidity-coverage": "^0.7.17",
+    "prettier": "^2.5.0",
+    "prettier-plugin-solidity": "^1.0.0-beta.19"
   },
   "scripts": {
     "prepare": "husky install",
     "compile": "npx hardhat compile",
     "local": "npx hardhat compile && npx hardhat run --network localhost ./scripts/index.js",
     "test": "npx hardhat coverage",
-    "node": "npx hardhat node"
+    "node": "npx hardhat node",
+    "format": "prettier --write . --loglevel silent"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "lint-staged": {
-    "*.{js,css,md,json,yml,yaml}": "prettier --write"
+    "*.{js,css,md,json,yml,yaml,sol}": "prettier --write"
   }
 }
