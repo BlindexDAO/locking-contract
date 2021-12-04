@@ -39,22 +39,14 @@ describe("BDLockingContract", function () {
     expect(await this.lockingContract.cliffDuration()).to.equal(cliffDurationSeconds);
   });
 
-  it("should transfer ERC20 tokens to locking contract", async function () {
-    let lockingContractBalance = await this.erc20Contract.balanceOf(this.lockingContract.address);
-    expect(lockingContractBalance).to.equal(0);
-
-    const amount = 150000;
-    await this.erc20Contract.transfer(this.lockingContract.address, amount);
-    lockingContractBalance = await this.erc20Contract.balanceOf(this.lockingContract.address);
-    expect(lockingContractBalance).to.equal(amount);
-  });
-
   it("should release no tokens before cliff", async function () {
+    const releaseTimestamp = startTimestamp + cliffDurationSeconds / 2;
+    await ethers.provider.send("evm_mine", [releaseTimestamp]);
     const released = await this.lockingContract.released(this.erc20Contract.address);
     expect(released.toNumber()).to.equal(0);
   });
 
-  it("should transfer free all deposit tokens when duartion from start is over", async function () {
+  it("should mark all tokens as freed after the locking duration time has passed", async function () {
     const totalLockAmount = 150000;
     await this.erc20Contract.transfer(this.lockingContract.address, totalLockAmount);
     const unlockAllTimestamp = startTimestamp + lockingDurationSeconds;
