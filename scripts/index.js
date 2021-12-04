@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 const { deployErc20Contract } = require("./erc20");
-const BigNumber = ethers.BigNumber;
+const { BigNumber } = ethers;
 
 async function deployDBLockingContract(beneficiariesAddresses, fundingAddress, startTimestamp, durationSeconds, cliffDurationSeconds) {
   const factory = await ethers.getContractFactory("BDLockingContract");
