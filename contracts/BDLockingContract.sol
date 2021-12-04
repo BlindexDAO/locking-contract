@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 contract BDLockingContract is Context, Ownable {
     event ERC20Released(address indexed token, address to, uint256 amount);
     event ERC20ZeroReleased(address indexed token);
-    event ERC20Withdrawal(address indexed token, uint256 amount);
+    event ERC20Withdrawal(address indexed token, address to, uint256 amount);
 
     mapping(address => uint256) private _erc20Released;
 
@@ -158,7 +158,7 @@ contract BDLockingContract is Context, Ownable {
         withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
 
         SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
-        emit ERC20Withdrawal(token, withdrawalAmount);
+        emit ERC20Withdrawal(token, _fundingAddress, withdrawalAmount);
     }
 
     /**
