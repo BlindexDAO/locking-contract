@@ -6,6 +6,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // 1. release() - limit so only the beneficiaryAddress could execute it
@@ -113,6 +114,11 @@ contract BDLockingContract is Context, Ownable {
      */
     function release(address token) external onlyBeneficiary {
         uint256 releasable = freedAmount(token, block.timestamp) - released(token);
+
+        // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
+        // back locked funds
+        releasable = Math.min(IERC20(token).balanceOf(address(this)), releasable);
+        require(releasable > 0, "BDLockingContract: Your token balance is empty, there is nothing to withdraw");
         _erc20Released[token] += releasable;
 
         // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
@@ -136,7 +142,7 @@ contract BDLockingContract is Context, Ownable {
     function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external onlyOwner {
         require(
             withdrawalBasisPoints >= 0 && withdrawalBasisPoints <= 10000,
-            "The percentage of the withdrawal must be between 0 to 10,000 basis points"
+            "BDLockingContract: The percentage of the withdrawal must be between 0 to 10,000 basis points"
         );
 
         uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
