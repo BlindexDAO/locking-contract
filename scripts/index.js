@@ -35,7 +35,7 @@ async function main() {
   const lockingDurationSeconds = 10 * 24 * 60 * 60; // 10 days
   const cliffDurationSeconds = 2 * 24 * 60 * 60; // 2 days
 
-  const erc20 = await deployErc20Contract(owner, erc20TotalSupply);
+  const erc20 = await deployErc20Contract(erc20TotalSupply);
   const locking = await deployDBLockingContract(
     beneficiariesAddresses,
     treasury.address,
