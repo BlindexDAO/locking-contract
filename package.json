@@ -12,6 +12,7 @@
     "hardhat": "^2.7.0",
     "husky": ">=6",
     "lint-staged": ">=10",
+    "solidity-coverage": "^0.7.17",
     "prettier": "^2.5.0",
     "prettier-plugin-solidity": "^1.0.0-beta.19"
   },
@@ -19,7 +20,7 @@
     "prepare": "husky install",
     "compile": "npx hardhat compile",
     "local": "npx hardhat compile && npx hardhat run --network localhost ./scripts/index.js",
-    "test": "npx hardhat test",
+    "test": "npx hardhat coverage",
     "node": "npx hardhat node",
     "format": "prettier --write . --loglevel silent"
   },
