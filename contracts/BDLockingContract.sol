@@ -6,8 +6,8 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 // 1. release() - limit so only the beneficiaryAddress could execute it
 // 2. implement release() which recieves an amount parameter to release specific amount
