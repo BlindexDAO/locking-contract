@@ -6,11 +6,14 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // 1. release() - limit so only the beneficiaryAddress could execute it
 // 2. implement release() which recieves an amount parameter to release specific amount
 contract BDLockingContract is Context, Ownable {
+    using SafeMath for uint256;
+
     event ERC20Released(address indexed token, uint256 amount);
     event ERC20Withdrawal(address indexed token, uint256 amount);
 
@@ -103,7 +106,7 @@ contract BDLockingContract is Context, Ownable {
      * @dev Amount of total initial alocation
      */
     function totalAllocation(address token) public view returns (uint256) {
-        return IERC20(token).balanceOf(address(this)) + released(token);
+        return IERC20(token).balanceOf(address(this)).add(released(token));
     }
 
     /**
@@ -112,14 +115,14 @@ contract BDLockingContract is Context, Ownable {
      * Emits a {TokensReleased} event.
      */
     function release(address token) external onlyBeneficiary {
-        uint256 releasable = freedAmount(token, block.timestamp) - released(token);
-        _erc20Released[token] += releasable;
+        uint256 releasable = freedAmount(token, block.timestamp).sub(released(token));
+        _erc20Released[token].add(releasable);
 
         // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
         // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
         // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
         // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
-        uint256 fairSplitReleasable = releasable / _beneficiaries.length;
+        uint256 fairSplitReleasable = releasable.div(_beneficiaries.length);
 
         for (uint256 index = 0; index < _beneficiaries.length; index++) {
             SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
@@ -130,9 +133,16 @@ contract BDLockingContract is Context, Ownable {
 
     /**
      * @dev Withdraw all the locked ERC20 tokens back to the funding address
+        @param token - the address of the token to withdraw
+        @param withdrawBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points
      */
-    function withdrawLockedERC20(address token) external onlyOwner {
-        uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
+    function withdrawLockedERC20(address token, uint256 withdrawBasisPoints) external onlyOwner {
+        require(
+            withdrawBasisPoints >= 0 && withdrawBasisPoints <= 10000,
+            "The percentage of the withdrawal must be between 0 to 10,000 basis points"
+        );
+
+        uint256 withdrawalAmount = totalAllocation(token).sub(freedAmount(token, block.timestamp));
         require(withdrawalAmount > 0, "BDLockingContract: There is nothing left to withdraw");
 
         SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
@@ -153,12 +163,12 @@ contract BDLockingContract is Context, Ownable {
      * The behavior is such that after the cliff period a linear freeing curve has been implemented.
      */
     function _freeingSchedule(uint256 totalTokenAllocation, uint256 timestamp) private view returns (uint256) {
-        if (timestamp < start() + cliffDuration()) {
+        if (timestamp < start().add(cliffDuration())) {
             return 0;
-        } else if (timestamp > start() + lockingDuration()) {
+        } else if (timestamp > start().add(lockingDuration())) {
             return totalTokenAllocation;
         } else {
-            return (totalTokenAllocation * (timestamp - start())) / lockingDuration();
+            return (totalTokenAllocation.mul(timestamp.sub(start()))).div(lockingDuration());
         }
     }
 }

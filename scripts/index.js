@@ -62,7 +62,7 @@ async function main() {
 
   const expectedTotalAllocation = transferAmount;
 
-  console.log("totalAllocation", expectedTotalAllocation);
+  console.log("totalAllocation", expectedTotalAllocation.toString());
   console.log("timestamp - start()", allocationTimestamp - startTimestamp);
   console.log("expected Freed", 0);
 
