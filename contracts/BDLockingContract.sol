@@ -118,20 +118,22 @@ contract BDLockingContract is Context, Ownable {
         // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
         // back locked funds
         releasable = Math.min(IERC20(token).balanceOf(address(this)), releasable);
-        require(releasable > 0, "BDLockingContract: Your token balance is empty, there is nothing to withdraw");
-        _erc20Released[token] += releasable;
 
-        // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
-        // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
-        // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
-        // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
-        uint256 fairSplitReleasable = releasable / _beneficiaries.length;
+        if (releasable > 0) {
+            _erc20Released[token] += releasable;
 
-        for (uint256 index = 0; index < _beneficiaries.length; index++) {
-            SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
+            // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
+            // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
+            // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
+            // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
+            uint256 fairSplitReleasable = releasable / _beneficiaries.length;
+
+            for (uint256 index = 0; index < _beneficiaries.length; index++) {
+                SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
+            }
+
+            emit ERC20Released(token, releasable);
         }
-
-        emit ERC20Released(token, releasable);
     }
 
     /**

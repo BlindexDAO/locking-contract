@@ -112,6 +112,34 @@ async function main() {
   console.log("Expected released for each beneficiary (before floor): ", expectedFreed / beneficiariesAddresses.length);
   console.log("First Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
   console.log("Second Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
+  console.log("=============Withdraw - non owner should fail============");
+  try {
+    await locking.connect(firstBeneficiary).withdrawLockedERC20(erc20.address, 100);
+    throw new Exception("Oops, for some reason a non owner address was able to call this function. Please check it out.");
+  } catch (e) {
+    console.log("GREAT!! Only the owner can call this fuction");
+  }
+  console.log("=============Withdraw - basis points validation============");
+  try {
+    await locking.connect(owner).withdrawLockedERC20(erc20.address, 10001);
+    throw new Exception("Oops, for some reason you were able to send an invalid basis points to the function. Please check it out.");
+  } catch (e) {
+    console.log("GREAT!! Basis points should be between 0 and 10,000");
+  }
+  console.log("=============Withdraw - 10.7%============");
+  const tokensAvilableForWithdrawl = expectedTotalAllocation - (await locking.freedAmount(erc20.address, await getCurrentTimestamp()));
+  console.log("Total tokens avilable for Withdrawal:", tokensAvilableForWithdrawl);
+  const withdrawalCostBasis = 1070;
+  const expectedTreasuryBalance = Math.floor(tokensAvilableForWithdrawl * (withdrawalCostBasis / 10000));
+
+  let treasuryBalance = await erc20.connect(treasury).balanceOf(erc20.address);
+  console.log("Treasury balance before the withdrawal:", treasuryBalance.toString());
+
+  await locking.connect(owner).withdrawLockedERC20(erc20.address, withdrawalCostBasis);
+
+  treasuryBalance = await erc20.balanceOf(treasury.address);
+  console.log("Expected treasury balance:", expectedTreasuryBalance);
+  console.log("Actual treasury balance:", treasuryBalance.toString());
   console.log("=============Release - duration ends============");
 
   console.log("First Beneficiary amount: ", (await erc20.balanceOf(firstBeneficiary.address)).toString());
@@ -132,9 +160,9 @@ async function main() {
   console.log("=============Non Beneficiary Trying to release============");
   try {
     await locking.connect(owner).release(erc20.address);
-    console.log("YOU FAILED!! Non beneficiary SHOULD NOT be able to release the funds. Even not the owner of the contract");
+    throw new Exception("YOU FAILED!! Non beneficiary SHOULD NOT be able to release the funds. Even not the owner of the contract");
   } catch (e) {
-    console.log("GREAT!! Non beneficiary (the owner) tried to call the release function and you stopped it! ");
+    console.log("GREAT!! Non beneficiary (the owner) tried to call the release function and you stopped it!");
   }
 
   // TODO: Tests to add - release
