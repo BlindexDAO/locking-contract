@@ -112,7 +112,7 @@ contract BDLockingContract is Context, Ownable {
      *
      * Emits a {TokensReleased} event.
      */
-    function release(address token) external onlyBeneficiary {
+    function release(address token) external virtual onlyBeneficiary {
         uint256 releasable = freedAmount(token, block.timestamp) - released(token);
 
         // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
@@ -141,7 +141,7 @@ contract BDLockingContract is Context, Ownable {
      * @param token - the address of the token to withdraw
      * @param withdrawalBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points.
      */
-    function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external onlyOwner {
+    function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external virtual onlyOwner {
         require(
             withdrawalBasisPoints >= 0 && withdrawalBasisPoints <= 10000,
             "BDLockingContract: The percentage of the withdrawal must be between 0 to 10,000 basis points"
@@ -151,6 +151,7 @@ contract BDLockingContract is Context, Ownable {
         require(withdrawalAmount > 0, "BDLockingContract: There is nothing left to withdraw");
 
         // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
+        // We're dealing here with small enough numbers, so no need for special treatment.
         // Therefore, we'll multiply first and only then divid to improve precision.
         // Before solidity 0.8 is was safer to first divid and then multiply (or using Openzeppelin's SafeMath library)
         withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
@@ -162,7 +163,7 @@ contract BDLockingContract is Context, Ownable {
     /**
      * @dev Calculates the amount of tokens that has already been freed.
      */
-    function freedAmount(address token, uint256 timestamp) public view returns (uint256) {
+    function freedAmount(address token, uint256 timestamp) public view virtual returns (uint256) {
         return _freeingSchedule(totalAllocation(token), timestamp);
     }
 
