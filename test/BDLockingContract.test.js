@@ -215,16 +215,41 @@ describe("BDLockingContract", function () {
     it("should be able to withdraw 10.7% of the locked tokens", async function () {
       const tokensAvilableForWithdrawl =
         erc20TotalSupply - (await this.lockingContract.freedAmount(this.erc20Contract.address, await getCurrentTimestamp()));
-      const withdrawalBasisPPoints = 1070;
+      const withdrawalBasisPoints = 1070;
 
       expect(await this.erc20Contract.connect(this.treasury).balanceOf(this.erc20Contract.address)).to.equal(0);
 
-      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalBasisPPoints);
-      const expectedTreasuryBalance = Math.floor(tokensAvilableForWithdrawl * (withdrawalBasisPPoints / 10000));
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalBasisPoints);
+      const expectedTreasuryBalance = Math.floor(tokensAvilableForWithdrawl * (withdrawalBasisPoints / 10000));
       const rangeBottom = expectedTreasuryBalance - percisionOffset;
       const rangeTop = expectedTreasuryBalance + percisionOffset;
 
       expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.be.within(rangeBottom, rangeTop);
+    });
+
+    it("should be able to withdraw and then release", async function () {
+      const withdrawalBasisPoints = 9500;
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalBasisPoints);
+
+      // Release after duration's end - should remain about (10,000 - withdrawalBasisPoints) of the tokens minus the number of beneficiaries
+      const releaseTimestamp = this.startTimestamp + durationSeconds;
+      await ethers.provider.send("evm_mine", [releaseTimestamp]);
+      await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
+
+      let rangeBottom = Math.floor(erc20TotalSupply * (1 - withdrawalBasisPoints / 10000) - this.beneficiariesAddresses.length);
+      let rangeTop = Math.floor(erc20TotalSupply * (1 - withdrawalBasisPoints / 10000));
+
+      expect(await this.lockingContract.released(this.erc20Contract.address)).to.be.within(rangeBottom, rangeTop);
+
+      rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
+      rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
+      const firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
+      const secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
+      const thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
+
+      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
     });
 
     // TODO: Events
