@@ -1,14 +1,15 @@
+import { Contract } from "@ethersproject/contracts";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers } from "hardhat";
-import deployErc20Contract from "../scripts/erc20";
-import { BDLockingContract, SampleERC20 } from "../typechain";
+import deployErc20Contract from "./scripts/SampleERC20";
+import { BDLockingContract } from "../typechain";
 
 // Override default Mocha context so we could have type safe on everything we set on the `this` context
 declare module "mocha" {
   export interface Context {
-    erc20Contract: SampleERC20;
+    erc20Contract: Contract;
     lockingContract: BDLockingContract;
     beneficiariesAddresses: string[];
     owner: SignerWithAddress;
