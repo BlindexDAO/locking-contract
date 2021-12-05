@@ -154,7 +154,7 @@ contract BDLockingContract is Context, Ownable {
         // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
         // We're dealing here with small enough numbers, so no need for special treatment.
         // Therefore, we'll multiply first and only then divid to improve precision.
-        // Before solidity 0.8 is was safer to first divid and then multiply (or using Openzeppelin's SafeMath library)
+        // Before solidity 0.8 it was safer to first divide and then multiply (or using Openzeppelin's SafeMath library)
         withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
 
         SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
