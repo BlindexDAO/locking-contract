@@ -5,21 +5,30 @@
   "main": "index.js",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.4.0",
+    "@typechain/ethers-v5": "^8.0.5",
+    "@typechain/hardhat": "^3.0.0",
+    "@types/chai": "^4.2.22",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.11.11",
     "chai": "^4.3.4",
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.2",
     "hardhat": "^2.7.0",
     "husky": ">=6",
     "lint-staged": ">=10",
-    "solidity-coverage": "^0.7.17",
     "prettier": "^2.5.0",
-    "prettier-plugin-solidity": "^1.0.0-beta.19"
+    "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "solidity-coverage": "^0.7.17",
+    "ts-node": "^10.4.0",
+    "typechain": "^6.0.5",
+    "typescript": "^4.5.2"
   },
   "scripts": {
     "prepare": "husky install",
     "compile": "npx hardhat compile",
-    "local": "npx hardhat compile && npx hardhat run --network localhost ./scripts/deploy.js",
+    "local": "npm run compile && npx hardhat run --network localhost ./scripts/deploy.ts",
     "test": "npx hardhat coverage",
     "node": "npx hardhat node",
     "format": "prettier --write . --loglevel silent"
