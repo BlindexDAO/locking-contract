@@ -25,6 +25,13 @@ async function getCurrentTimestamp() {
 describe("BDLockingContract", function () {
   before(async function () {
     this.BDLockingContract = await ethers.getContractFactory("BDLockingContract");
+    const [owner, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary] = await ethers.getSigners();
+    this.beneficiariesAddresses = [firstBeneficiary.address, secondBeneficiary.address, thirdBeneficiary.address];
+    this.owner = owner;
+    this.treasury = treasury;
+    this.firstBeneficiary = firstBeneficiary;
+    this.secondBeneficiary = secondBeneficiary;
+    this.thirdBeneficiary = thirdBeneficiary;
   });
 
   durationSeconds = 10 * 24 * 60 * 60; // 10 days
@@ -33,16 +40,7 @@ describe("BDLockingContract", function () {
   percisionOffset = 150;
 
   beforeEach(async function () {
-    // We must reset the account before every test so that their balances will be erased each time
-    const [owner, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary] = await ethers.getSigners();
-    this.beneficiariesAddresses = [firstBeneficiary.address, secondBeneficiary.address, thirdBeneficiary.address];
-    this.owner = owner;
-    this.treasury = treasury;
-    this.firstBeneficiary = firstBeneficiary;
-    this.secondBeneficiary = secondBeneficiary;
-    this.thirdBeneficiary = thirdBeneficiary;
     this.startTimestamp = await getCurrentTimestamp();
-
     this.lockingContract = await this.BDLockingContract.deploy(
       this.beneficiariesAddresses,
       this.treasury.address,
