@@ -1,9 +1,11 @@
 import { BigNumber } from "@ethersproject/bignumber";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers } from "hardhat";
 import deployErc20Contract from "../scripts/erc20";
 const { expect } = chai;
+import { SampleERC20, BDLockingContract } from "../typechain";
 
 chai.use(solidity);
 
