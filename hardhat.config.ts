@@ -1,21 +1,16 @@
-require("@nomiclabs/hardhat-ethers");
-require("solidity-coverage");
+import { HardhatUserConfig } from "hardhat/config";
+import "@nomiclabs/hardhat-ethers";
+import "@typechain/hardhat";
+import "@nomiclabs/hardhat-waffle";
+import "solidity-coverage";
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
-module.exports = {
+
+const config: HardhatUserConfig = {
   solidity: {
     compilers: [
-      {
-        version: "0.6.12",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
       {
         version: "0.8.4",
         settings: {
@@ -28,3 +23,5 @@ module.exports = {
     ],
   },
 };
+
+export default config;
