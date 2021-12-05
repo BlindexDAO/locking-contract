@@ -15,6 +15,7 @@ contract BDLockingContract is Context, Ownable {
     event ERC20Released(address indexed token, address indexed to, uint256 amount);
     event ERC20ZeroReleased(address indexed token);
     event ERC20Withdrawal(address indexed token, address indexed to, uint256 amount);
+    event ERC20ZeroWithdrawal(address indexed token, address indexed to);
 
     mapping(address => uint256) private _erc20Released;
 
@@ -149,16 +150,19 @@ contract BDLockingContract is Context, Ownable {
         );
 
         uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
-        require(withdrawalAmount > 0, "BDLockingContract: There is nothing left to withdraw");
 
-        // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
-        // We're dealing here with small enough numbers, so no need for special treatment.
-        // Therefore, we'll multiply first and only then divid to improve precision.
-        // Before solidity 0.8 it was safer to first divide and then multiply (or using Openzeppelin's SafeMath library)
-        withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
+        if (withdrawalAmount == 0) {
+            emit ERC20ZeroWithdrawal(token, _fundingAddress);
+        } else {
+            // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
+            // We're dealing here with small enough numbers, so no need for special treatment.
+            // Therefore, we'll multiply first and only then divid to improve precision.
+            // Before solidity 0.8 it was safer to first divide and then multiply (or using Openzeppelin's SafeMath library)
+            withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
 
-        SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
-        emit ERC20Withdrawal(token, _fundingAddress, withdrawalAmount);
+            SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
+            emit ERC20Withdrawal(token, _fundingAddress, withdrawalAmount);
+        }
     }
 
     /**
