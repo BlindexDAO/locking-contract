@@ -1,11 +1,8 @@
-import { BigNumber } from "@ethersproject/bignumber";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
 import { ethers } from "hardhat";
 import deployErc20Contract from "../scripts/erc20";
 const { expect } = chai;
-import { SampleERC20, BDLockingContract } from "../typechain";
 
 chai.use(solidity);
 
@@ -38,7 +35,7 @@ describe("BDLockingContract", function () {
 
   const durationSeconds: number = 10 * 24 * 60 * 60; // 10 days
   const cliffDurationSeconds: number = 2 * 24 * 60 * 60; // 2 days
-  const erc20TotalSupply: number = BigNumber.from(98394797).toNumber();
+  const erc20TotalSupply: number = 98394797;
   const percisionOffset: number = 150;
 
   beforeEach(async function (this: any) {
