@@ -8,7 +8,7 @@ const { BigNumber } = ethers;
 chai.use(solidity);
 
 function calcExpectedFreed(totalAllocation, allocationTimestamp, startTimestamp, durationSeconds) {
-  const timePassed = Math.min(allocationTimestamp - startTimestamp, 0);
+  const timePassed = Math.max(allocationTimestamp - startTimestamp, 0);
   if (timePassed >= durationSeconds) {
     return totalAllocation;
   } else {
