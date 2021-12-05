@@ -67,7 +67,7 @@ describe("BDLockingContract", function () {
     // TODO: Constractor tests
     // Some Beneficiary in the list is zero address
     // The list of Beneficiaries is empty
-    // const cliffDurationSeconds = durationSeconds + 1; // Test cliff larger than duration
+    // Test cliff larger than duration
   });
 
   describe("Locking schedule", function () {
