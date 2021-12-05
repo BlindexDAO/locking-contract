@@ -74,7 +74,7 @@ describe("BDLockingContract", function () {
 
   describe("Locking schedule", function () {
     it("should not free any tokens until the cliff period has ended", async function () {
-      const unlockAllTimestamp = this.startTimestamp + cliffDurationSeconds / 2;
+      const unlockAllTimestamp = this.startTimestamp + cliffDurationSeconds - 1;
       expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(0);
     });
 
