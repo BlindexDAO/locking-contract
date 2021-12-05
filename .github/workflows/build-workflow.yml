@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  Prettify:
+  CI:
     runs-on: ubuntu-latest
 
     steps:
