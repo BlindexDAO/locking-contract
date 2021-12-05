@@ -7,12 +7,14 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 // 1. release() - limit so only the beneficiaryAddress could execute it
 // 2. implement release() which recieves an amount parameter to release specific amount
 contract BDLockingContract is Context, Ownable {
-    event ERC20Released(address indexed token, uint256 amount);
-    event ERC20Withdrawal(address indexed token, uint256 amount);
+    event ERC20Released(address indexed token, address indexed to, uint256 amount);
+    event ERC20ZeroReleased(address indexed token);
+    event ERC20Withdrawal(address indexed token, address indexed to, uint256 amount);
 
     mapping(address => uint256) private _erc20Released;
 
@@ -111,39 +113,58 @@ contract BDLockingContract is Context, Ownable {
      *
      * Emits a {TokensReleased} event.
      */
-    function release(address token) external onlyBeneficiary {
+    function release(address token) external virtual onlyBeneficiary {
         uint256 releasable = freedAmount(token, block.timestamp) - released(token);
-        _erc20Released[token] += releasable;
 
-        // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
-        // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
-        // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
-        // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
-        uint256 fairSplitReleasable = releasable / _beneficiaries.length;
+        // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
+        // back locked funds
+        releasable = Math.min(IERC20(token).balanceOf(address(this)), releasable);
 
-        for (uint256 index = 0; index < _beneficiaries.length; index++) {
-            SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
+        if (releasable == 0) {
+            emit ERC20ZeroReleased(token);
+        } else {
+            // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
+            // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
+            // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
+            // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
+            uint256 fairSplitReleasable = releasable / _beneficiaries.length;
+
+            for (uint256 index = 0; index < _beneficiaries.length; index++) {
+                SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
+                _erc20Released[token] += fairSplitReleasable;
+                emit ERC20Released(token, _beneficiaries[index], fairSplitReleasable);
+            }
         }
-
-        emit ERC20Released(token, releasable);
     }
 
     /**
      * @dev Withdraw all the locked ERC20 tokens back to the funding address
+     * @param token - the address of the token to withdraw
+     * @param withdrawalBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points.
      */
-    function withdrawLockedERC20(address token) external onlyOwner {
+    function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external virtual onlyOwner {
+        require(
+            withdrawalBasisPoints >= 0 && withdrawalBasisPoints <= 10000,
+            "BDLockingContract: The percentage of the withdrawal must be between 0 to 10,000 basis points"
+        );
+
         uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
         require(withdrawalAmount > 0, "BDLockingContract: There is nothing left to withdraw");
 
-        SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
+        // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
+        // We're dealing here with small enough numbers, so no need for special treatment.
+        // Therefore, we'll multiply first and only then divid to improve precision.
+        // Before solidity 0.8 it was safer to first divide and then multiply (or using Openzeppelin's SafeMath library)
+        withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
 
-        emit ERC20Withdrawal(token, withdrawalAmount);
+        SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
+        emit ERC20Withdrawal(token, _fundingAddress, withdrawalAmount);
     }
 
     /**
      * @dev Calculates the amount of tokens that has already been freed.
      */
-    function freedAmount(address token, uint256 timestamp) public view returns (uint256) {
+    function freedAmount(address token, uint256 timestamp) public view virtual returns (uint256) {
         return _freeingSchedule(totalAllocation(token), timestamp);
     }
 
