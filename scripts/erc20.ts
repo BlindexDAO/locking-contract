@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { SampleERC20 } from "../typechain";
 
 async function deployErc20Contract(totalSupply: number, name: string = "Sample Token", symbol: string = "SMPL") {
   const factory = await ethers.getContractFactory("SampleERC20");
