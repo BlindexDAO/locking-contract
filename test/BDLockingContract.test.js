@@ -98,8 +98,7 @@ describe("BDLockingContract", function () {
     });
 
     it("should release tokens after the cliff period has ended", async function () {
-      const currentTimestamp = await getCurrentTimestamp();
-      const releaseTimestamp = currentTimestamp + cliffDurationSeconds;
+      const releaseTimestamp = (await getCurrentTimestamp()) + cliffDurationSeconds;
       await ethers.provider.send("evm_mine", [releaseTimestamp]);
       await this.lockingContract.connect(this.secondBeneficiary).release(this.erc20Contract.address);
 
@@ -114,6 +113,51 @@ describe("BDLockingContract", function () {
       const firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
       const secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
       const thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
+
+      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+    });
+
+    it("should be able to release tokens multiple times", async function () {
+      // First release
+      let releaseTimestamp = (await getCurrentTimestamp()) + cliffDurationSeconds;
+      await ethers.provider.send("evm_mine", [releaseTimestamp]);
+      await this.lockingContract.connect(this.secondBeneficiary).release(this.erc20Contract.address);
+
+      let expectedFreed = calcExpectedFreed(erc20TotalSupply, releaseTimestamp, this.startTimestamp, durationSeconds);
+      let rangeBottom = expectedFreed - percisionOffset;
+      let rangeTop = expectedFreed + percisionOffset;
+
+      expect(await this.lockingContract.released(this.erc20Contract.address)).to.be.within(rangeBottom, rangeTop);
+
+      rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
+      rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
+      let firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
+      let secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
+      let thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
+
+      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+
+      // Second release
+      releaseTimestamp += (this.startTimestamp + durationSeconds - releaseTimestamp) / 2;
+      await ethers.provider.send("evm_mine", [releaseTimestamp]);
+
+      await this.lockingContract.connect(this.secondBeneficiary).release(this.erc20Contract.address);
+
+      expectedFreed = calcExpectedFreed(erc20TotalSupply, releaseTimestamp, this.startTimestamp, durationSeconds);
+      rangeBottom = expectedFreed - percisionOffset;
+      rangeTop = expectedFreed + percisionOffset;
+
+      expect(await this.lockingContract.released(this.erc20Contract.address)).to.be.within(rangeBottom, rangeTop);
+
+      rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
+      rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
+      firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
+      secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
+      thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
 
       expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
       expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
