@@ -145,8 +145,8 @@ contract BDLockingContract is Context, Ownable {
      */
     function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external virtual onlyOwner {
         require(
-            withdrawalBasisPoints >= 0 && withdrawalBasisPoints <= 10000,
-            "BDLockingContract: The percentage of the withdrawal must be between 0 to 10,000 basis points"
+            withdrawalBasisPoints > 0 && withdrawalBasisPoints <= 10000,
+            "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
         );
 
         uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
