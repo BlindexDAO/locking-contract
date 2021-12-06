@@ -4,6 +4,11 @@ import "@typechain/hardhat";
 import "@nomiclabs/hardhat-waffle";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
+import dotenv from "dotenv";
+import path from "path";
+
+const envPath = path.join(__dirname, "./.env");
+dotenv.config({ path: envPath });
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
