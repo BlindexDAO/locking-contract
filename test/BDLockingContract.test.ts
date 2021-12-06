@@ -1,8 +1,27 @@
+import { Contract } from "@ethersproject/contracts";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { solidity } from "ethereum-waffle";
 import { ethers } from "hardhat";
-import deployErc20Contract from "../scripts/erc20";
+import deployErc20Contract from "./scripts/SampleERC20";
+import { BDLockingContract } from "../typechain";
+
+// Override default Mocha context so we could have type safe on everything we set on the `this` context
+declare module "mocha" {
+  export interface Context {
+    erc20Contract: Contract;
+    lockingContract: BDLockingContract;
+    beneficiariesAddresses: string[];
+    owner: SignerWithAddress;
+    treasury: SignerWithAddress;
+    firstBeneficiary: SignerWithAddress;
+    secondBeneficiary: SignerWithAddress;
+    thirdBeneficiary: SignerWithAddress;
+    startTimestamp: number;
+  }
+}
+
 const { expect } = chai;
 
 chai.use(chaiAsPromised);
@@ -24,7 +43,7 @@ async function getCurrentTimestamp(): Promise<number> {
 }
 
 describe("BDLockingContract", function () {
-  before(async function (this: any) {
+  before(async function () {
     this.BDLockingContract = await ethers.getContractFactory("BDLockingContract");
     const [owner, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary] = await ethers.getSigners();
     this.beneficiariesAddresses = [firstBeneficiary.address, secondBeneficiary.address, thirdBeneficiary.address];
@@ -40,7 +59,7 @@ describe("BDLockingContract", function () {
   const erc20TotalSupply: number = 98394797;
   const percisionOffset: number = 150;
 
-  beforeEach(async function (this: any) {
+  beforeEach(async function () {
     this.startTimestamp = await getCurrentTimestamp();
     this.lockingContract = await this.BDLockingContract.deploy(
       this.beneficiariesAddresses,
@@ -58,7 +77,7 @@ describe("BDLockingContract", function () {
   });
 
   describe("Initialization", function () {
-    it("should initialize valid parameters on constructor", async function (this: any) {
+    it("should initialize valid parameters on constructor", async function () {
       expect(await this.lockingContract.beneficiaries()).to.eql(this.beneficiariesAddresses);
       expect(await this.lockingContract.fundingAddress()).to.equal(this.treasury.address);
       expect(await this.lockingContract.start()).to.equal(this.startTimestamp);
@@ -66,7 +85,7 @@ describe("BDLockingContract", function () {
       expect(await this.lockingContract.cliffDuration()).to.equal(cliffDurationSeconds);
     });
 
-    it("should fail to deploy when one of the beneficiaries is zero address", function (this: any) {
+    it("should fail to deploy when one of the beneficiaries is zero address", function () {
       expect(
         this.BDLockingContract.deploy(
           [...this.beneficiariesAddresses, ethers.constants.AddressZero],
@@ -78,13 +97,13 @@ describe("BDLockingContract", function () {
       ).to.be.rejectedWith(/BDLockingContract: A beneficiary is zero address/);
     });
 
-    it("should fail to deploy when the list of beneficiaries is empty", function (this: any) {
+    it("should fail to deploy when the list of beneficiaries is empty", function () {
       expect(this.BDLockingContract.deploy([], this.treasury.address, this.startTimestamp, durationSeconds, cliffDurationSeconds)).to.be.rejectedWith(
         /BDLockingContract: You must have at least one beneficiary/
       );
     });
 
-    it("should fail to deploy when cliff is greater than duration", function (this: any) {
+    it("should fail to deploy when cliff is greater than duration", function () {
       const cliffDuration = durationSeconds + 100;
       expect(
         this.BDLockingContract.deploy(this.beneficiariesAddresses, this.treasury.address, this.startTimestamp, durationSeconds, cliffDuration)
@@ -93,25 +112,25 @@ describe("BDLockingContract", function () {
   });
 
   describe("Locking schedule", function () {
-    it("should not free any tokens until the cliff period has ended", async function (this: any) {
+    it("should not free any tokens until the cliff period has ended", async function () {
       const unlockAllTimestamp = this.startTimestamp + cliffDurationSeconds - 1;
       expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(0);
     });
 
-    it("should free tokens after the cliff period has ended", async function (this: any) {
+    it("should free tokens after the cliff period has ended", async function () {
       const unlockAllTimestamp = this.startTimestamp + cliffDurationSeconds + 1;
       const expectedFreedTokens = calcExpectedFreed(erc20TotalSupply, unlockAllTimestamp, this.startTimestamp, durationSeconds);
       expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(expectedFreedTokens);
     });
 
-    it("should mark all tokens as freed after the locking duration time has passed", async function (this: any) {
+    it("should mark all tokens as freed after the locking duration time has passed", async function () {
       const unlockAllTimestamp = this.startTimestamp + durationSeconds + 1;
       expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(erc20TotalSupply);
     });
   });
 
   describe("Releasing funds", function () {
-    it("should not release any tokens before the cliff period ends", async function (this: any) {
+    it("should not release any tokens before the cliff period ends", async function () {
       const releaseTimestamp = this.startTimestamp + cliffDurationSeconds / 2;
       await ethers.provider.send("evm_mine", [releaseTimestamp]);
       const releaseTx = await this.lockingContract.connect(this.thirdBeneficiary).release(this.erc20Contract.address);
@@ -120,7 +139,7 @@ describe("BDLockingContract", function () {
       expect(await this.lockingContract.released(this.erc20Contract.address)).to.equal(0);
     });
 
-    it("should release tokens after the cliff period has ended", async function (this: any) {
+    it("should release tokens after the cliff period has ended", async function () {
       const releaseTimestamp = (await getCurrentTimestamp()) + cliffDurationSeconds;
       await ethers.provider.send("evm_mine", [releaseTimestamp]);
       const releaseTx = await this.lockingContract.connect(this.secondBeneficiary).release(this.erc20Contract.address);
@@ -152,7 +171,7 @@ describe("BDLockingContract", function () {
         .withArgs(this.erc20Contract.address, this.thirdBeneficiary.address, thirdBeneficiaryBalance);
     });
 
-    it("should be able to release tokens multiple times", async function (this: any) {
+    it("should be able to release tokens multiple times", async function () {
       // First release
       let releaseTimestamp = (await getCurrentTimestamp()) + cliffDurationSeconds;
       await ethers.provider.send("evm_mine", [releaseTimestamp]);
@@ -217,7 +236,7 @@ describe("BDLockingContract", function () {
         .withArgs(this.erc20Contract.address, this.thirdBeneficiary.address, thirdBeneficiarySecondReleaseBalance - thirdBeneficiaryBalance);
     });
 
-    it("should release almost all tokens after the locking duration has ended - at most leave behind tokens like the number of beneficiaries", async function (this: any) {
+    it("should release almost all tokens after the locking duration has ended - at most leave behind tokens like the number of beneficiaries", async function () {
       const releaseTimestamp = this.startTimestamp + durationSeconds;
       await ethers.provider.send("evm_mine", [releaseTimestamp]);
       const releaseTx = await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
@@ -274,9 +293,9 @@ describe("BDLockingContract", function () {
       );
     });
 
-    it("should be able to withdraw 10.7% of the locked tokens", async function (this: any) {
+    it("should be able to withdraw 10.7% of the locked tokens", async function () {
       const tokensAvilableForWithdrawl =
-        erc20TotalSupply - (await this.lockingContract.freedAmount(this.erc20Contract.address, await getCurrentTimestamp()));
+        erc20TotalSupply - (await this.lockingContract.freedAmount(this.erc20Contract.address, await getCurrentTimestamp())).toNumber();
       const withdrawalBasisPoints = 1070;
 
       expect(await this.erc20Contract.connect(this.treasury).balanceOf(this.erc20Contract.address)).to.equal(0);
@@ -294,7 +313,7 @@ describe("BDLockingContract", function () {
         .withArgs(this.erc20Contract.address, this.treasury.address, withdrawalAmount);
     });
 
-    it("should be able to withdraw and then release", async function (this: any) {
+    it("should be able to withdraw and then release", async function () {
       const withdrawalBasisPoints = 9500;
       await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalBasisPoints);
 
@@ -319,7 +338,7 @@ describe("BDLockingContract", function () {
       expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
     });
 
-    it("should withdraw no tokens after all tokens are unlocked", async function (this: any) {
+    it("should withdraw no tokens after all tokens are unlocked", async function () {
       const releaseAllTimestamp = this.startTimestamp + durationSeconds;
       await ethers.provider.send("evm_mine", [releaseAllTimestamp]);
       const withdrawTx = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 10);
