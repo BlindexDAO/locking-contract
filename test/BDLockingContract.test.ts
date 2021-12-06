@@ -248,7 +248,7 @@ describe("BDLockingContract", function () {
         .withArgs(this.erc20Contract.address, this.thirdBeneficiary.address, thirdBeneficiaryBalance);
     });
 
-    it("should only allow a beneficiary to call the release function - not even the owner", async function () {
+    it("should only allow a beneficiary to call the release function - not even the owner", function () {
       expect(this.lockingContract.connect(this.owner).release(this.erc20Contract.address)).to.be.rejectedWith(
         /BDLockingContract: You are not one of the allowed beneficiaries, you cannot execute this function/
       );
