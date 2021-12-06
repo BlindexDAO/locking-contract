@@ -10,7 +10,7 @@ Blindex belongs to no one except its community.
 
 ## Environment variables
 
-Create a `.env` file in your root folder and make sur eyou have the following environment arguments in it:
+Create a `.env` file in your root folder and make sure you have the following environment variables in it:
 
 ```shell
 CMC_TOKEN=<your_coinmarketcap_token_for_gas_reports>
