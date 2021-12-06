@@ -256,7 +256,7 @@ describe("BDLockingContract", function () {
   });
 
   describe("Withdraw locked funds", function () {
-    it("should only allow an owner to withdraw funds", async function () {
+    it("should only allow an owner to withdraw funds", function () {
       expect(this.lockingContract.connect(this.firstBeneficiary).withdrawLockedERC20(this.erc20Contract.address, 100)).to.be.rejectedWith(
         /Ownable: caller is not the owner/
       );
