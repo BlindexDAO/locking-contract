@@ -30,7 +30,5 @@ jobs:
         with:
           commit_message: Prettified Code!
           branch: ${{ github.head_ref }}
-      - name: Compile
-        run: npm run compile
       - name: Tests
         run: npm test
