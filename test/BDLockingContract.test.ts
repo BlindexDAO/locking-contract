@@ -66,7 +66,7 @@ describe("BDLockingContract", function () {
       expect(await this.lockingContract.cliffDuration()).to.equal(cliffDurationSeconds);
     });
 
-    it("should fail to deploy when one of the beneficiaries is zero address", async function (this: any) {
+    it("should fail to deploy when one of the beneficiaries is zero address", function (this: any) {
       expect(
         this.BDLockingContract.deploy(
           [...this.beneficiariesAddresses, ethers.constants.AddressZero],
