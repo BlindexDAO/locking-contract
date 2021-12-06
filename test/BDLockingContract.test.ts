@@ -262,7 +262,7 @@ describe("BDLockingContract", function () {
       );
     });
 
-    it("should make sure basis points is greater than 0", async function () {
+    it("should make sure basis points is greater than 0", function () {
       expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 0)).to.be.rejectedWith(
         /BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points/
       );
