@@ -28,6 +28,10 @@ const config: HardhatUserConfig = {
     target: "ethers-v5",
     externalArtifacts: [],
   },
+  gasReporter: {
+    currency: "USD",
+    gasPrice: 90,
+  },
 };
 
 export default config;
