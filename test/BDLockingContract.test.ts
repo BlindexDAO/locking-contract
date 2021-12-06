@@ -78,7 +78,7 @@ describe("BDLockingContract", function () {
       ).to.be.rejectedWith(/BDLockingContract: A beneficiary is zero address/);
     });
 
-    it("should fail to deploy when list of beneficiaries is empty", async function (this: any) {
+    it("should fail to deploy when the list of beneficiaries is empty", function (this: any) {
       expect(this.BDLockingContract.deploy([], this.treasury.address, this.startTimestamp, durationSeconds, cliffDurationSeconds)).to.be.rejectedWith(
         /BDLockingContract: You must have at least one beneficiary/
       );
