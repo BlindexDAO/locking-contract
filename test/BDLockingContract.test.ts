@@ -84,7 +84,7 @@ describe("BDLockingContract", function () {
       );
     });
 
-    it("should fail to deploy when cliff is greater than duration", async function (this: any) {
+    it("should fail to deploy when cliff is greater than duration", function (this: any) {
       const cliffDuration = durationSeconds + 100;
       expect(
         this.BDLockingContract.deploy(this.beneficiariesAddresses, this.treasury.address, this.startTimestamp, durationSeconds, cliffDuration)
