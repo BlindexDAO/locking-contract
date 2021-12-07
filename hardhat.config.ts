@@ -1,4 +1,5 @@
 import { HardhatUserConfig } from "hardhat/config";
+import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-waffle";
@@ -36,6 +37,27 @@ const config: HardhatUserConfig = {
   gasReporter: {
     currency: "USD",
     coinmarketcap: process.env.CMC_TOKEN,
+  },
+  networks: {
+    rsktestnet: {
+      url: "https://public-node.testnet.rsk.co",
+      accounts: [
+        process.env.DEPLOYER_PRIVATE_KEY!,
+        process.env.TREASURY_PRIVATE_KEY!,
+        process.env.USER1_PRIVATE_KEY!,
+        process.env.USER2_PRIVATE_KEY!,
+        process.env.USER3_PRIVATE_KEY!,
+      ],
+      timeout: 6_000_000,
+      gasPrice: 79240000,
+    },
+  },
+  namedAccounts: {
+    DEPLOYER: 0,
+    TREASURY: 1,
+    USER1: 2,
+    USER2: 3,
+    USER3: 4,
   },
 };
 

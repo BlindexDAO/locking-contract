@@ -1,17 +1,23 @@
-// scripts/deploy.js
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
+import moment from "moment";
 
-// async function main() {
-//   // We get the contract to deploy
-//   const BDLockingContract = await ethers.getContractFactory("BDLockingContract");
-//   console.log("Deploying BDLockingContract...");
-//   const locking = await BDLockingContract.deploy();
-//   await locking.deployed();
-//   console.log("BDLockingContract deployed to:", locking.address);
-// }
+const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+  const { deployments, getNamedAccounts } = hre;
+  const { deploy } = deployments;
 
-// main()
-//   .then(() => process.exit(0))
-//   .catch((error) => {
-//     console.error(error);
-//     process.exit(1);
-//   });
+  const { deployer, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary } = await getNamedAccounts();
+
+  const startTimestamp = moment().add(1, "minute").unix();
+  const duration = 60 * 60;
+  const cliffSeconds = 60;
+
+  await deploy("BDLockingContract", {
+    from: deployer,
+    args: [[firstBeneficiary, secondBeneficiary, thirdBeneficiary], treasury, startTimestamp, duration, cliffSeconds],
+    log: true,
+    autoMine: true, // speed up deployment on local network (ganache, hardhat), no effect on live networks
+  });
+};
+export default func;
+func.tags = ["BDLockingContract"];
