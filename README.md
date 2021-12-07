@@ -61,3 +61,12 @@ You can use your tests to see how much gas your contract functions cost by runni
 ```shell
 npm run test:gas
 ```
+
+# Useful links
+
+## RSK Testnet
+
+- [RSK faucet](https://faucet.rsk.co/) - RBTC
+- [Sovryn faucet](https://faucet.sovryn.app/#) - RBTC, WRBTC, SOV, DOC, USDT, RENBTC
+- [RSK explorer](https://explorer.testnet.rsk.co/)
+- [USDT](https://explorer.testnet.rsk.co/address/0x4d5a316d23ebe168d8f887b4447bf8dbfa4901cc)
