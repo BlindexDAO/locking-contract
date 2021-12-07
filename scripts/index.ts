@@ -2,8 +2,6 @@ import { ContractInterface } from "@ethersproject/contracts";
 import { formatEther } from "@ethersproject/units";
 import { ethers } from "hardhat";
 import { BDLockingContract } from "../typechain";
-// const { deployErc20Contract } = require("./erc20");
-// const { BigNumber } = ethers;
 
 // function calcExpectedFreed(totalAllocation, allocationTimestamp, startTimestamp, durationSeconds) {
 //   const timePassed = allocationTimestamp - startTimestamp;
@@ -251,6 +249,8 @@ function getERC20(address: string) {
 async function main() {
   const USDT_ADDRESS = "0x4D5a316D23eBE168d8f887b4447bf8DbFA4901CC";
   const BDLockingContractAddress = "0xeb8eb3AFe11c125C92189f269F3F81B5ef22D2C6";
+  const EXPLORER_BASE_PATH = "https://explorer.testnet.rsk.co";
+  const explorerTransaction = `${EXPLORER_BASE_PATH}/tx/%s`;
   const timestamp = await getCurrentTimestamp();
 
   const [deployer, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary] = await ethers.getSigners();
@@ -265,15 +265,33 @@ async function main() {
   // console.log("Cliff", (await lockingContract.cliffDuration()).toString());
   console.log("===================================================");
   const usdtContract = getERC20(USDT_ADDRESS);
-  // console.log("Treasury ERC20 balance", formatEther(await usdtContract.balanceOf(treasury.address)));
-  // console.log("Locking contract ERC20 balance", formatEther(await usdtContract.balanceOf(lockingContract.address)));
-  // const tx = await usdtContract.connect(treasury).transfer(lockingContract.address, 5);
-  // console.log("Waiting......");
-  // await tx.wait();
-  // console.log("Treasury ERC20 balance", formatEther(await usdtContract.balanceOf(treasury.address)));
+  console.log("Treasury ERC20 balance", formatEther(await usdtContract.balanceOf(treasury.address)));
   console.log("Locking contract ERC20 balance", formatEther(await usdtContract.balanceOf(lockingContract.address)));
+  const tx = await usdtContract.connect(treasury).transfer(lockingContract.address, 500);
+  console.log(`Transaction: ${explorerTransaction}`, tx.hash);
+  console.log("Transffering funds from the treasury to the locking contract...");
+  await tx.wait();
+  console.log("Treasury ERC20 balance", formatEther(await usdtContract.balanceOf(treasury.address)));
+  console.log("Locking contract ERC20 balance", formatEther(await usdtContract.balanceOf(lockingContract.address)));
+  console.log("===================================================");
   console.log("Total allocation", formatEther(await lockingContract.totalAllocation(usdtContract.address)));
   console.log("Freed amount", formatEther(await lockingContract.freedAmount(usdtContract.address, timestamp)));
+  console.log("===================================================");
+  console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(firstBeneficiary.address)));
+  console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(secondBeneficiary.address)));
+  console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(thirdBeneficiary.address)));
+  const releasetx = await lockingContract.connect(firstBeneficiary).release(usdtContract.address);
+  console.log(`Transaction: ${explorerTransaction}`, releasetx.hash);
+  console.log("Releasing funds...");
+  await releasetx.wait();
+  console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(firstBeneficiary.address)));
+  console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(secondBeneficiary.address)));
+  console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(thirdBeneficiary.address)));
+  console.log("===================================================");
+  console.log("Locking contract ERC20 balance", formatEther(await usdtContract.balanceOf(lockingContract.address)));
+  console.log("Freed amount", formatEther(await lockingContract.freedAmount(usdtContract.address, timestamp)));
+  console.log("Released so far", formatEther(await lockingContract.released(usdtContract.address)));
+  console.log("===================================================");
 }
 
 main()
