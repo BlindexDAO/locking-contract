@@ -21,12 +21,12 @@ async function getCurrentTimestamp() {
 }
 
 async function main() {
+  const RBTC_ADDRESS = "0xE53d858A78d884659bf6955Ea43cba67c0ae293F";
   const timestamp = await getCurrentTimestamp();
   console.log("timestamp", timestamp);
 
   const [deployer, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary, anotherOne] = await ethers.getSigners();
   console.log("deployer.address", deployer.address);
-  console.log("anotherOne", anotherOne.address);
 }
 
 // async function main() {
