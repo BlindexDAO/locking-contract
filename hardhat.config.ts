@@ -58,7 +58,6 @@ const config: HardhatUserConfig = {
     USER1: 2,
     USER2: 3,
     USER3: 4,
-    USER4: 5,
   },
 };
 
