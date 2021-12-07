@@ -39,7 +39,7 @@ const config: HardhatUserConfig = {
     coinmarketcap: process.env.CMC_TOKEN,
   },
   networks: {
-    rsktestnet: {
+    "rsk-testnet": {
       url: "https://public-node.testnet.rsk.co",
       accounts: [
         process.env.DEPLOYER_PRIVATE_KEY!,
@@ -58,6 +58,7 @@ const config: HardhatUserConfig = {
     USER1: 2,
     USER2: 3,
     USER3: 4,
+    USER4: 5,
   },
 };
 
