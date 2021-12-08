@@ -26,7 +26,7 @@ USER2_PRIVATE_KEY=...
 USER3_PRIVATE_KEY=...
 ```
 
-You can [get your free tier token here](https://coinmarketcap.com/api).
+You can [get your free tier CMC token here](https://coinmarketcap.com/api).
 
 ## Node.js
 
