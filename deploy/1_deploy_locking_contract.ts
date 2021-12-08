@@ -8,7 +8,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const startTimestamp = moment().unix();
   const duration = 60 * 60;
-  const cliffSeconds = 60;
+  const cliffSeconds = moment.duration(1, 'year').asSeconds();
 
   const BDLockingContract = await hre.ethers.getContractFactory("BDLockingContract");
   const lockingContract = await BDLockingContract.connect(deployer).deploy(
