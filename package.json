@@ -37,7 +37,7 @@
   "scripts": {
     "prepare": "husky install",
     "compile": "npx hardhat compile",
-    "test": "cross-env DOTENV_CONFIG_PATH=./.env.test npm run compile && npx hardhat coverage --testfiles './test/**/*.test.ts'",
+    "test": "npm run compile && npx hardhat coverage --testfiles './test/**/*.test.ts'",
     "test:gas": "cross-env REPORT_GAS=true npx hardhat test",
     "test:rsk-testnet": "npx hardhat run --network rsk-testnet ./test/scripts/testRSKTestnet.ts",
     "node": "npx hardhat node",

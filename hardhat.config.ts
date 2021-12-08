@@ -11,6 +11,18 @@ import path from "path";
 const envPath = path.join(__dirname, "./.env");
 dotenv.config({ path: envPath });
 
+let rskTestnetAccount: string[] = [];
+
+if (process.env.DEPLOYER_PRIVATE_KEY) {
+  rskTestnetAccount = [
+    process.env.DEPLOYER_PRIVATE_KEY!,
+    process.env.TREASURY_PRIVATE_KEY!,
+    process.env.USER1_PRIVATE_KEY!,
+    process.env.USER2_PRIVATE_KEY!,
+    process.env.USER3_PRIVATE_KEY!,
+  ];
+}
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -39,15 +51,10 @@ const config: HardhatUserConfig = {
     coinmarketcap: process.env.CMC_TOKEN,
   },
   networks: {
+    hardhat: {},
     "rsk-testnet": {
       url: "https://public-node.testnet.rsk.co",
-      accounts: [
-        process.env.DEPLOYER_PRIVATE_KEY!,
-        process.env.TREASURY_PRIVATE_KEY!,
-        process.env.USER1_PRIVATE_KEY!,
-        process.env.USER2_PRIVATE_KEY!,
-        process.env.USER3_PRIVATE_KEY!,
-      ],
+      accounts: rskTestnetAccount,
       timeout: 6_000_000,
       gasPrice: 79240000,
     },
