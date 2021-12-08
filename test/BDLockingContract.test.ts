@@ -109,6 +109,18 @@ describe("BDLockingContract", function () {
         this.BDLockingContract.deploy(this.beneficiariesAddresses, this.treasury.address, this.startTimestamp, durationSeconds, cliffDuration)
       ).to.be.rejectedWith(/BDLockingContract: The duration of the cliff period must end before the entire lockup period/);
     });
+
+    it("should fail to deploy when funding is zero address", function () {
+      expect(
+        this.BDLockingContract.deploy(
+          [...this.beneficiariesAddresses],
+          ethers.constants.AddressZero,
+          this.startTimestamp,
+          durationSeconds,
+          cliffDurationSeconds
+        )
+      ).to.be.rejectedWith(/BDLockingContract: Funding is zero address/);
+    });
   });
 
   describe("Locking schedule", function () {
