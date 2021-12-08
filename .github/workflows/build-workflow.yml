@@ -25,10 +25,13 @@ jobs:
         run: npm ci
       - name: Prettify code
         run: npm run format
+      - name: "Generate Docs"
+        run: npm run docs
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: Prettified Code!
+          commit_message: Prettified code and generated docs!
           branch: ${{ github.head_ref }}
+          commit_options: "--no-verify"
       - name: Tests
         run: npm test
