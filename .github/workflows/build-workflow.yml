@@ -25,6 +25,8 @@ jobs:
         run: npm ci
       - name: Prettify code
         run: npm run format
+      - name: "Generate Docs"
+        run: npm run docs
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v4
         with:

@@ -10,3 +10,4 @@ coverage.json
 dist
 typechain
 .env
+docs/SampleERC20.md

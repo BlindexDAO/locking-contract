@@ -27,7 +27,9 @@
     "moment": "^2.29.1",
     "prettier": "^2.5.0",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "solc-0.8": "npm:solc@^0.8.10",
     "solidity-coverage": "^0.7.17",
+    "solidity-docgen": "^0.5.16",
     "ts-node": "^10.4.0",
     "typechain": "^6.0.5",
     "typescript": "^4.5.2"
@@ -41,7 +43,8 @@
     "test:rsk-testnet": "npx hardhat run --network rsk-testnet ./test/scripts/testRSKTestnet.ts",
     "node": "npx hardhat node",
     "format": "prettier --write . --loglevel silent",
-    "deploy:rsk-testnet": "hardhat --network rsk-testnet deploy"
+    "deploy:rsk-testnet": "hardhat --network rsk-testnet deploy",
+    "docs": "npx solidity-docgen --solc-module solc-0.8"
   },
   "keywords": [],
   "author": "",

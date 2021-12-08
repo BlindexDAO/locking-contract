@@ -9,12 +9,25 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-// 1. release() - limit so only the beneficiaryAddress could execute it
-// 2. implement release() which recieves an amount parameter to release specific amount
+/**
+@dev The BDLockingContract is used to hold funds given for a certian amount of time with a cliff period. There is also an option for the owner of the contract to withdraw back all the still locked funds - this option exists to allow a DAO/the owner to change the decision on the amount of locked funds at any time.
+ */
 contract BDLockingContract is Context, Ownable {
+    /**
+    @dev Emitted whenever a release request goes through.
+     */
     event ERC20Released(address indexed token, address indexed to, uint256 amount);
+    /**
+    @dev Emitted whenever a release request goes through, but there is nothing to release.
+     */
     event ERC20ZeroReleased(address indexed token);
+    /**
+    @dev Emitted whenever a withdrawal request goes through.
+     */
     event ERC20Withdrawal(address indexed token, address indexed to, uint256 amount);
+    /**
+    @dev Emitted whenever a withdrawal request goes through, but there is nothing to withdraw.
+     */
     event ERC20ZeroWithdrawal(address indexed token, address indexed to);
 
     mapping(address => uint256) private _erc20Released;
@@ -49,6 +62,9 @@ contract BDLockingContract is Context, Ownable {
         _fundingAddress = erc20FundingAddress;
     }
 
+    /**
+    @dev Modifier to protect functions that should be called only by one of the beneficiaries.
+     */
     modifier onlyBeneficiary() {
         bool isBeneficiary = false;
 
@@ -96,14 +112,14 @@ contract BDLockingContract is Context, Ownable {
     }
 
     /**
-     * @dev Amount of token already released
+     * @dev Amount of tokens already released.
      */
     function released(address token) public view returns (uint256) {
         return _erc20Released[token];
     }
 
     /**
-     * @dev Amount of total initial alocation
+     * @dev Amount of the total initial alocation.
      */
     function totalAllocation(address token) public view returns (uint256) {
         return IERC20(token).balanceOf(address(this)) + released(token);
@@ -112,7 +128,7 @@ contract BDLockingContract is Context, Ownable {
     /**
      * @dev Release and send the freed ERC20 tokens to the beneficiaries in a fair split manner. This function can only be executed by a beneficiary.
      *
-     * Emits a {TokensReleased} event.
+     * Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
      */
     function release(address token) external virtual onlyBeneficiary {
         uint256 releasable = freedAmount(token, block.timestamp) - released(token);
@@ -139,9 +155,10 @@ contract BDLockingContract is Context, Ownable {
     }
 
     /**
-     * @dev Withdraw all the locked ERC20 tokens back to the funding address
+     * @dev Withdraw all the locked ERC20 tokens back to the funding address, based on the given precentage (as basis points).
      * @param token - the address of the token to withdraw
      * @param withdrawalBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points.
+     * Emits a ERC20Withdrawal event if there are funds to withdraw, or ERC20ZeroWithdrawal if there are no funds left to withdraw.
      */
     function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external virtual onlyOwner {
         require(
