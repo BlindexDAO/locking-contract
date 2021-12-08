@@ -38,7 +38,7 @@
     "prepare": "husky install",
     "compile": "npx hardhat compile",
     "local": "npm run compile && npx hardhat run --network localhost ./scripts/deploy.ts",
-    "test": "npm run compile && npx hardhat coverage",
+    "test": "npm run compile && npx hardhat coverage --testfiles './test/**/*.test.ts'",
     "test:gas": "cross-env REPORT_GAS=true npx hardhat test",
     "test:rsk-testnet": "npx hardhat run --network rsk-testnet ./test/scripts/testRSKTestnet.ts",
     "node": "npx hardhat node",
