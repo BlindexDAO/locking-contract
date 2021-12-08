@@ -38,7 +38,7 @@
     "local": "npm run compile && npx hardhat run --network localhost ./scripts/deploy.ts",
     "test": "npm run compile && npx hardhat coverage",
     "test:gas": "cross-env REPORT_GAS=true npx hardhat test",
-    "test:rsk-testnet": "npx hardhat run --network rsk-testnet ./scripts/index.ts",
+    "test:rsk-testnet": "npx hardhat run --network rsk-testnet ./test/scripts/testRSKTestnet.ts",
     "node": "npx hardhat node",
     "format": "prettier --write . --loglevel silent",
     "deploy:rsk-testnet": "hardhat --network rsk-testnet deploy"

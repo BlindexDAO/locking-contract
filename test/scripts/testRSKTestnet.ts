@@ -1,16 +1,7 @@
 import { ContractInterface } from "@ethersproject/contracts";
 import { formatEther } from "@ethersproject/units";
 import { ethers } from "hardhat";
-import { BDLockingContract } from "../typechain";
-
-// function calcExpectedFreed(totalAllocation, allocationTimestamp, startTimestamp, durationSeconds) {
-//   const timePassed = allocationTimestamp - startTimestamp;
-//   if (timePassed >= durationSeconds) {
-//     return totalAllocation;
-//   } else {
-//     return Math.floor(totalAllocation * (timePassed / durationSeconds));
-//   }
-// }
+import { BDLockingContract } from "../../typechain";
 
 async function getCurrentTimestamp() {
   const blockNumber = await ethers.provider.getBlockNumber();
@@ -256,13 +247,13 @@ async function main() {
   const [deployer, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary] = await ethers.getSigners();
   console.log("deployer.address", deployer.address);
 
-  // console.log("locking contract RBTC balance", (await ethers.provider.getBalance(BDLockingContractAddress.toLowerCase())).toNumber());
+  console.log("locking contract RBTC balance", (await ethers.provider.getBalance(BDLockingContractAddress.toLowerCase())).toNumber());
 
   const lockingContract: BDLockingContract = await ethers.getContractAt("BDLockingContract", BDLockingContractAddress.toLowerCase());
-  // console.log("beneficiaries", await lockingContract.beneficiaries());
-  // console.log("Start", (await lockingContract.start()).toString());
-  // console.log("Duration", (await lockingContract.lockingDuration()).toString());
-  // console.log("Cliff", (await lockingContract.cliffDuration()).toString());
+  console.log("beneficiaries", await lockingContract.beneficiaries());
+  console.log("Start", (await lockingContract.start()).toString());
+  console.log("Duration", (await lockingContract.lockingDuration()).toString());
+  console.log("Cliff", (await lockingContract.cliffDuration()).toString());
   console.log("===================================================");
   const usdtContract = getERC20(USDT_ADDRESS);
   console.log("Treasury ERC20 balance", formatEther(await usdtContract.balanceOf(treasury.address)));
