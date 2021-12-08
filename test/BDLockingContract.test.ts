@@ -119,7 +119,7 @@ describe("BDLockingContract", function () {
           durationSeconds,
           cliffDurationSeconds
         )
-      ).to.be.rejectedWith(/BDLockingContract: Funding contract is zero address/);
+      ).to.be.rejectedWith(/BDLockingContract: Funding is zero address/);
     });
   });
 

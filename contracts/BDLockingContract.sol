@@ -42,7 +42,7 @@ contract BDLockingContract is Context, Ownable {
             "BDLockingContract: The duration of the cliff period must end before the entire lockup period"
         );
 
-        require(erc20FundingAddress != address(0), "BDLockingContract: Funding contract is zero address");
+        require(erc20FundingAddress != address(0), "BDLockingContract: Funding is zero address");
 
         _cliffDurationSeconds = cliffDurationSeconds;
         _beneficiaries = beneficiariesAddresses;
