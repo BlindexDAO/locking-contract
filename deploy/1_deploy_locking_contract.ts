@@ -6,7 +6,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log("Deploy BDLockingContract...");
   const [deployer, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary] = await hre.ethers.getSigners();
 
-  const startTimestamp = moment().add(1, "minute").unix();
+  const startTimestamp = moment().unix();
   const duration = 60 * 60;
   const cliffSeconds = 60;
 
