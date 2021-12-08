@@ -50,17 +50,9 @@ Please run the [hardhat local network](https://hardhat.org/hardhat-network/):
 npm run node
 ```
 
-#### Development
-
-And in a seperate terminal run:
-
-```shell
-npm run local
-```
-
 #### Tests
 
-Please run:
+And in a seperate terminal run, lease run:
 
 ```shell
 npm test
