@@ -121,7 +121,7 @@ contract BDLockingContract is Context, Ownable {
     }
 
     /**
-     * @dev Amount of the total initial alocation.
+     * @dev Amount of the total funds deposited to the contract, minus the funds released or withdrawn from the contract.
      */
     function totalAllocation(address token) public view returns (uint256) {
         return IERC20(token).balanceOf(address(this)) + released(token);
@@ -149,8 +149,8 @@ contract BDLockingContract is Context, Ownable {
             uint256 fairSplitReleasable = releasable / _beneficiaries.length;
 
             for (uint256 index = 0; index < _beneficiaries.length; index++) {
-                SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
                 _erc20Released[token] += fairSplitReleasable;
+                SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
                 emit ERC20Released(token, _beneficiaries[index], fairSplitReleasable);
             }
         }
