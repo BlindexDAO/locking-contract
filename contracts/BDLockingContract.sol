@@ -45,7 +45,10 @@ contract BDLockingContract is Context, Ownable {
         uint256 durationSeconds,
         uint256 cliffDurationSeconds
     ) {
-        require(beneficiariesAddresses.length > 0, "BDLockingContract: You must have at least one beneficiary");
+        require(
+            beneficiariesAddresses.length > 0 && beneficiariesAddresses.length <= 100,
+            "BDLockingContract: You must have at least one beneficiary and no more than 100"
+        );
         for (uint256 index = 0; index < beneficiariesAddresses.length; index++) {
             require(beneficiariesAddresses[index] != address(0), "BDLockingContract: A beneficiary is zero address");
         }

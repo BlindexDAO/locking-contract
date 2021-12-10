@@ -99,8 +99,16 @@ describe("BDLockingContract", function () {
 
     it("should fail to deploy when the list of beneficiaries is empty", function () {
       expect(this.BDLockingContract.deploy([], this.treasury.address, this.startTimestamp, durationSeconds, cliffDurationSeconds)).to.be.rejectedWith(
-        "BDLockingContract: You must have at least one beneficiary"
+        "BDLockingContract: You must have at least one beneficiary and no more than 100"
       );
+    });
+
+    it("should fail to deploy when there are more than 100 beneficiaries", function () {
+      const randomAddress = ethers.Wallet.createRandom().address;
+      const beneficiaries = Array.from({ length: 101 }, () => randomAddress);
+      expect(
+        this.BDLockingContract.deploy(beneficiaries, this.treasury.address, this.startTimestamp, durationSeconds, cliffDurationSeconds)
+      ).to.be.rejectedWith("BDLockingContract: You must have at least one beneficiary and no more than 100");
     });
 
     it("should fail to deploy when cliff is greater than duration", function () {
