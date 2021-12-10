@@ -251,9 +251,9 @@ async function main() {
 
   const lockingContract: BDLockingContract = await ethers.getContractAt("BDLockingContract", BDLockingContractAddress.toLowerCase());
   console.log("beneficiaries", await lockingContract.beneficiaries());
-  console.log("Start", (await lockingContract.start()).toString());
-  console.log("Duration", (await lockingContract.lockingDuration()).toString());
-  console.log("Cliff", (await lockingContract.cliffDuration()).toString());
+  console.log("Start", (await lockingContract._startTimestamp()).toString());
+  console.log("Duration", (await lockingContract._lockingDurationSeconds()).toString());
+  console.log("Cliff", (await lockingContract._cliffDurationSeconds()).toString());
   console.log("===================================================");
   const usdtContract = getERC20(USDT_ADDRESS);
   console.log("Treasury ERC20 balance", formatEther(await usdtContract.balanceOf(treasury.address)));
