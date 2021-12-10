@@ -23,30 +23,6 @@ Modifier to protect functions that should be called only by one of the beneficia
 
 Getter for the beneficiaries addresses.
 
-### `fundingAddress() → address` (public)
-
-
-
-Getter for the funding address
-
-### `start() → uint256` (public)
-
-
-
-Getter for the start timestamp.
-
-### `lockingDuration() → uint256` (public)
-
-
-
-Getter for the lockup duration.
-
-### `cliffDuration() → uint256` (public)
-
-
-
-Getter for the cliff duration (seconds).
-
 ### `released(address token) → uint256` (public)
 
 
@@ -57,7 +33,7 @@ Amount of tokens already released.
 
 
 
-Amount of the total initial alocation.
+Amount of the total funds deposited to the contract, minus the funds released or withdrawn from the contract.
 
 ### `release(address token)` (external)
 
@@ -79,6 +55,7 @@ Withdraw all the locked ERC20 tokens back to the funding address, based on the g
 
 
 Calculates the amount of tokens that has already been freed.
+The behavior is such that after the cliff period, a linear freeing curve has been implemented.
 
 
 ### `ERC20Released(address token, address to, uint256 amount)`
