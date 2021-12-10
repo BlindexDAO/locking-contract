@@ -186,17 +186,11 @@ contract BDLockingContract is Context, Ownable {
 
     /**
      * @dev Calculates the amount of tokens that has already been freed.
+     * The behavior is such that after the cliff period, a linear freeing curve has been implemented.
      */
     function freedAmount(address token, uint256 timestamp) public view virtual returns (uint256) {
-        return _freeingSchedule(totalAllocation(token), timestamp);
-    }
+        uint256 totalTokenAllocation = totalAllocation(token);
 
-    /**
-     * @dev Implementation of the locking formula. This returns the amount freed, as a function of time, for
-     * an asset given its total historical allocation.
-     * The behavior is such that after the cliff period a linear freeing curve has been implemented.
-     */
-    function _freeingSchedule(uint256 totalTokenAllocation, uint256 timestamp) private view returns (uint256) {
         if (timestamp < start() + cliffDuration()) {
             return 0;
         } else if (timestamp > start() + lockingDuration()) {
