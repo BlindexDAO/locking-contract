@@ -33,10 +33,10 @@ contract BDLockingContract is Context, Ownable {
     mapping(address => uint256) private _erc20Released;
 
     address[] private _beneficiaries;
-    address private immutable _fundingAddress;
-    uint256 private immutable _cliffDurationSeconds;
-    uint256 private immutable _startTimestamp;
-    uint256 private immutable _lockingDurationSeconds;
+    address public immutable _fundingAddress;
+    uint256 public immutable _cliffDurationSeconds;
+    uint256 public immutable _startTimestamp;
+    uint256 public immutable _lockingDurationSeconds;
 
     constructor(
         address[] memory beneficiariesAddresses,
@@ -83,34 +83,6 @@ contract BDLockingContract is Context, Ownable {
      */
     function beneficiaries() public view returns (address[] memory) {
         return _beneficiaries;
-    }
-
-    /**
-     * @dev Getter for the funding address
-     */
-    function fundingAddress() public view returns (address) {
-        return _fundingAddress;
-    }
-
-    /**
-     * @dev Getter for the start timestamp.
-     */
-    function start() public view returns (uint256) {
-        return _startTimestamp;
-    }
-
-    /**
-     * @dev Getter for the lockup duration.
-     */
-    function lockingDuration() public view returns (uint256) {
-        return _lockingDurationSeconds;
-    }
-
-    /**
-     * @dev Getter for the cliff duration (seconds).
-     */
-    function cliffDuration() public view returns (uint256) {
-        return _cliffDurationSeconds;
     }
 
     /**
@@ -191,12 +163,12 @@ contract BDLockingContract is Context, Ownable {
     function freedAmount(address token, uint256 timestamp) public view virtual returns (uint256) {
         uint256 totalTokenAllocation = totalAllocation(token);
 
-        if (timestamp < start() + cliffDuration()) {
+        if (timestamp < _startTimestamp + _cliffDurationSeconds) {
             return 0;
-        } else if (timestamp > start() + lockingDuration()) {
+        } else if (timestamp > _startTimestamp + _lockingDurationSeconds) {
             return totalTokenAllocation;
         } else {
-            return (totalTokenAllocation * (timestamp - start())) / lockingDuration();
+            return (totalTokenAllocation * (timestamp - _startTimestamp)) / _lockingDurationSeconds;
         }
     }
 }

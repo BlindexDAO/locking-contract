@@ -79,10 +79,10 @@ describe("BDLockingContract", function () {
   describe("Initialization", function () {
     it("should initialize valid parameters on constructor", async function () {
       expect(await this.lockingContract.beneficiaries()).to.eql(this.beneficiariesAddresses);
-      expect(await this.lockingContract.fundingAddress()).to.equal(this.treasury.address);
-      expect(await this.lockingContract.start()).to.equal(this.startTimestamp);
-      expect(await this.lockingContract.lockingDuration()).to.equal(durationSeconds);
-      expect(await this.lockingContract.cliffDuration()).to.equal(cliffDurationSeconds);
+      expect(await this.lockingContract._fundingAddress()).to.equal(this.treasury.address);
+      expect(await this.lockingContract._startTimestamp()).to.equal(this.startTimestamp);
+      expect(await this.lockingContract._lockingDurationSeconds()).to.equal(durationSeconds);
+      expect(await this.lockingContract._cliffDurationSeconds()).to.equal(cliffDurationSeconds);
     });
 
     it("should fail to deploy when one of the beneficiaries is zero address", function () {
