@@ -38,7 +38,7 @@
     "prepare": "husky install",
     "compile": "npx hardhat compile",
     "test": "npm run compile && npx hardhat coverage --testfiles './test/**/*.test.ts'",
-    "test:gas": "cross-env REPORT_GAS=true npx hardhat test",
+    "test:gas": "cross-env REPORT_GAS=true npx hardhat test './test/BDLockingContract.test.ts'",
     "test:rsk-testnet": "npx hardhat run --network rsk-testnet ./test/scripts/testRSKTestnet.ts",
     "node": "npx hardhat node",
     "format": "prettier --write . --loglevel silent",

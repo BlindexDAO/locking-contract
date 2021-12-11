@@ -80,9 +80,9 @@ describe("BDLockingContract", function () {
     it("should initialize valid parameters on constructor", async function () {
       expect(await this.lockingContract.beneficiaries()).to.eql(this.beneficiariesAddresses);
       expect(await this.lockingContract.fundingAddress()).to.equal(this.treasury.address);
-      expect(await this.lockingContract.start()).to.equal(this.startTimestamp);
-      expect(await this.lockingContract.lockingDuration()).to.equal(durationSeconds);
-      expect(await this.lockingContract.cliffDuration()).to.equal(cliffDurationSeconds);
+      expect(await this.lockingContract.startTimestamp()).to.equal(this.startTimestamp);
+      expect(await this.lockingContract.lockingDurationSeconds()).to.equal(durationSeconds);
+      expect(await this.lockingContract.cliffDurationSeconds()).to.equal(cliffDurationSeconds);
     });
 
     it("should fail to deploy when one of the beneficiaries is zero address", function () {
@@ -94,20 +94,28 @@ describe("BDLockingContract", function () {
           durationSeconds,
           cliffDurationSeconds
         )
-      ).to.be.rejectedWith(/BDLockingContract: A beneficiary is zero address/);
+      ).to.be.rejectedWith("BDLockingContract: A beneficiary is zero address");
     });
 
     it("should fail to deploy when the list of beneficiaries is empty", function () {
       expect(this.BDLockingContract.deploy([], this.treasury.address, this.startTimestamp, durationSeconds, cliffDurationSeconds)).to.be.rejectedWith(
-        /BDLockingContract: You must have at least one beneficiary/
+        "BDLockingContract: You must have at least one beneficiary and no more than 100"
       );
+    });
+
+    it("should fail to deploy when there are more than 100 beneficiaries", function () {
+      const randomAddress = ethers.Wallet.createRandom().address;
+      const beneficiaries = Array.from({ length: 101 }, () => randomAddress);
+      expect(
+        this.BDLockingContract.deploy(beneficiaries, this.treasury.address, this.startTimestamp, durationSeconds, cliffDurationSeconds)
+      ).to.be.rejectedWith("BDLockingContract: You must have at least one beneficiary and no more than 100");
     });
 
     it("should fail to deploy when cliff is greater than duration", function () {
       const cliffDuration = durationSeconds + 100;
       expect(
         this.BDLockingContract.deploy(this.beneficiariesAddresses, this.treasury.address, this.startTimestamp, durationSeconds, cliffDuration)
-      ).to.be.rejectedWith(/BDLockingContract: The duration of the cliff period must end before the entire lockup period/);
+      ).to.be.rejectedWith("BDLockingContract: The duration of the cliff period must end before the entire lockup period");
     });
 
     it("should fail to deploy when funding is zero address", function () {
@@ -119,7 +127,7 @@ describe("BDLockingContract", function () {
           durationSeconds,
           cliffDurationSeconds
         )
-      ).to.be.rejectedWith(/BDLockingContract: Funding is zero address/);
+      ).to.be.rejectedWith("BDLockingContract: Funding is zero address");
     });
   });
 
@@ -281,7 +289,7 @@ describe("BDLockingContract", function () {
 
     it("should only allow a beneficiary to call the release function - not even the owner", function () {
       expect(this.lockingContract.connect(this.owner).release(this.erc20Contract.address)).to.be.rejectedWith(
-        /BDLockingContract: You are not one of the allowed beneficiaries, you cannot execute this function/
+        "BDLockingContract: You are not one of the allowed beneficiaries, you cannot execute this function"
       );
     });
   });
@@ -289,19 +297,19 @@ describe("BDLockingContract", function () {
   describe("Withdraw locked funds", function () {
     it("should only allow an owner to withdraw funds", function () {
       expect(this.lockingContract.connect(this.firstBeneficiary).withdrawLockedERC20(this.erc20Contract.address, 100)).to.be.rejectedWith(
-        /Ownable: caller is not the owner/
+        "Ownable: caller is not the owner"
       );
     });
 
     it("should make sure basis points is greater than 0", function () {
       expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 0)).to.be.rejectedWith(
-        /BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points/
+        "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
       );
     });
 
     it("should make sure basis points is lower than 10000", function () {
       expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 10001)).to.be.rejectedWith(
-        /BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points/
+        "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
       );
     });
 
