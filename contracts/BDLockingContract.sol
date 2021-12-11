@@ -8,11 +8,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
 @dev The BDLockingContract is used to hold funds given for a certain amount of time with a cliff period. There is also an option for the owner of the contract to withdraw back all the still locked funds - this option exists to allow a DAO/the owner to change the decision on the amount of locked funds at any time. Once the cliff period is over, any of the defined beneficiaries can invoke the release() function which will split the freed funds fairly between all the beneficiaries.
  */
-contract BDLockingContract is Context, Ownable {
+contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     /**
     @dev Emitted whenever a release request goes through.
      */
@@ -104,7 +105,7 @@ contract BDLockingContract is Context, Ownable {
      *
      * Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
      */
-    function release(address token) external virtual onlyBeneficiary {
+    function release(address token) external virtual onlyBeneficiary nonReentrant {
         uint256 releasable = freedAmount(token, block.timestamp) - released(token);
 
         // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
@@ -118,12 +119,12 @@ contract BDLockingContract is Context, Ownable {
             // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
             // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
             // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
-            uint256 fairSplitReleasable = releasable / _beneficiaries.length;
+            uint256 roundedDownFairSplitReleasable = releasable / _beneficiaries.length;
+            _erc20Released[token] += roundedDownFairSplitReleasable * _beneficiaries.length;
 
             for (uint256 index = 0; index < _beneficiaries.length; index++) {
-                _erc20Released[token] += fairSplitReleasable;
-                SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], fairSplitReleasable);
-                emit ERC20Released(token, _beneficiaries[index], fairSplitReleasable);
+                SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], roundedDownFairSplitReleasable);
+                emit ERC20Released(token, _beneficiaries[index], roundedDownFairSplitReleasable);
             }
         }
     }
