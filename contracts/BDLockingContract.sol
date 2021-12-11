@@ -33,17 +33,17 @@ contract BDLockingContract is Context, Ownable {
     mapping(address => uint256) private _erc20Released;
 
     address[] private _beneficiaries;
-    address public immutable _fundingAddress;
-    uint256 public immutable _cliffDurationSeconds;
-    uint256 public immutable _startTimestamp;
-    uint256 public immutable _lockingDurationSeconds;
+    address public immutable fundingAddress;
+    uint256 public immutable cliffDurationSeconds;
+    uint256 public immutable startTimestamp;
+    uint256 public immutable lockingDurationSeconds;
 
     constructor(
         address[] memory beneficiariesAddresses,
         address erc20FundingAddress,
-        uint256 startTimestamp,
+        uint256 start,
         uint256 durationSeconds,
-        uint256 cliffDurationSeconds
+        uint256 cliffDuration
     ) {
         require(
             beneficiariesAddresses.length > 0 && beneficiariesAddresses.length <= 100,
@@ -53,18 +53,15 @@ contract BDLockingContract is Context, Ownable {
             require(beneficiariesAddresses[index] != address(0), "BDLockingContract: A beneficiary is zero address");
         }
 
-        require(
-            cliffDurationSeconds < durationSeconds,
-            "BDLockingContract: The duration of the cliff period must end before the entire lockup period"
-        );
+        require(cliffDuration < durationSeconds, "BDLockingContract: The duration of the cliff period must end before the entire lockup period");
 
         require(erc20FundingAddress != address(0), "BDLockingContract: Funding is zero address");
 
-        _cliffDurationSeconds = cliffDurationSeconds;
         _beneficiaries = beneficiariesAddresses;
-        _startTimestamp = startTimestamp;
-        _lockingDurationSeconds = durationSeconds;
-        _fundingAddress = erc20FundingAddress;
+        cliffDurationSeconds = cliffDuration;
+        startTimestamp = start;
+        lockingDurationSeconds = durationSeconds;
+        fundingAddress = erc20FundingAddress;
     }
 
     /**
@@ -146,7 +143,7 @@ contract BDLockingContract is Context, Ownable {
         uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
 
         if (withdrawalAmount == 0) {
-            emit ERC20ZeroWithdrawal(token, _fundingAddress);
+            emit ERC20ZeroWithdrawal(token, fundingAddress);
         } else {
             // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
             // We're dealing here with small enough numbers, so no need for special treatment.
@@ -154,8 +151,8 @@ contract BDLockingContract is Context, Ownable {
             // Before solidity 0.8 it was safer to first divide and then multiply (or using Openzeppelin's SafeMath library)
             withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
 
-            SafeERC20.safeTransfer(IERC20(token), _fundingAddress, withdrawalAmount);
-            emit ERC20Withdrawal(token, _fundingAddress, withdrawalAmount);
+            SafeERC20.safeTransfer(IERC20(token), fundingAddress, withdrawalAmount);
+            emit ERC20Withdrawal(token, fundingAddress, withdrawalAmount);
         }
     }
 
@@ -166,12 +163,12 @@ contract BDLockingContract is Context, Ownable {
     function freedAmount(address token, uint256 timestamp) public view virtual returns (uint256) {
         uint256 totalTokenAllocation = totalAllocation(token);
 
-        if (timestamp < _startTimestamp + _cliffDurationSeconds) {
+        if (timestamp < startTimestamp + cliffDurationSeconds) {
             return 0;
-        } else if (timestamp > _startTimestamp + _lockingDurationSeconds) {
+        } else if (timestamp > startTimestamp + lockingDurationSeconds) {
             return totalTokenAllocation;
         } else {
-            return (totalTokenAllocation * (timestamp - _startTimestamp)) / _lockingDurationSeconds;
+            return (totalTokenAllocation * (timestamp - startTimestamp)) / lockingDurationSeconds;
         }
     }
 }
