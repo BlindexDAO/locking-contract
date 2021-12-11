@@ -11,7 +11,7 @@ The BDLockingContract is used to hold funds given for a certain amount of time w
 Modifier to protect functions that should be called only by one of the beneficiaries.
 
 
-### `constructor(address[] beneficiariesAddresses, address erc20FundingAddress, uint256 startTimestamp, uint256 durationSeconds, uint256 cliffDurationSeconds)` (public)
+### `constructor(address[] beneficiariesAddresses, address erc20FundingAddress, uint256 start, uint256 durationSeconds, uint256 cliffDuration)` (public)
 
 
 
