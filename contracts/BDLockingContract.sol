@@ -191,6 +191,10 @@ contract BDLockingContract is Context, Ownable {
         return _freeingSchedule(totalAllocation(token), timestamp);
     }
 
+    function freedAmount2(address token) public view returns (uint256) {
+        return _freeingSchedule(totalAllocation(token), block.timestamp);
+    }
+
     /**
      * @dev Implementation of the locking formula. This returns the amount freed, as a function of time, for
      * an asset given its total historical allocation.

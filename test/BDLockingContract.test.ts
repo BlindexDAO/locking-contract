@@ -325,29 +325,91 @@ describe("BDLockingContract", function () {
         .withArgs(this.erc20Contract.address, this.treasury.address, withdrawalAmount);
     });
 
-    it("should be able to withdraw and then release", async function () {
-      const withdrawalBasisPoints = 9500;
-      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalBasisPoints);
-
-      // Release after duration's end - should remain about (10,000 - withdrawalBasisPoints) of the tokens minus the number of beneficiaries
+    it("AUDIT test2: owner can withdraw all un-claimed funds", async function () {
+      const withdrawalBasisPoints = 10000;
       const releaseTimestamp = this.startTimestamp + durationSeconds;
       await ethers.provider.send("evm_mine", [releaseTimestamp]);
+      console.log("now try to withdraw all remaining locked tokens");
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalBasisPoints);
+      console.log(`total amount released:`, await this.lockingContract.released(this.erc20Contract.address));
+      console.log(`lockingcontract balance:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+    });
+    it.only("AUDIT test1: withdrawying twice will fail", async function () {
+      const withdrawalBasisPoints = 5000;
+      const releaseTimestamp = this.startTimestamp + durationSeconds;
+      console.log("- move TIME 1/3 of the vesting period");
+      await ethers.provider.send("evm_mine", [this.startTimestamp + durationSeconds / 3]);
+      console.log(`balance of firstBenefiiciary`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
+      console.log(`lockingcontract balance:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log("- release tokns to first benefiiciary");
       await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
+      console.log(`balance of firstBenefiiciary`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
+      console.log(`lockingcontract balance:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log("- withdraw 50% of remaining locked tokens");
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 5000);
 
-      let rangeBottom: number = Math.floor(erc20TotalSupply * (1 - withdrawalBasisPoints / 10000) - this.beneficiariesAddresses.length);
-      let rangeTop: number = Math.floor(erc20TotalSupply * (1 - withdrawalBasisPoints / 10000));
+      console.log("MOVE TIME TO 2/3 of the vesting period");
+      await ethers.provider.send("evm_mine", [this.startTimestamp + (durationSeconds * 2) / 3]);
+      console.log(`lockingcontract balance after withdrawal:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log(`lockingcontract totalAllocation:`, await this.lockingContract.totalAllocation(this.erc20Contract.address));
+      console.log(`lockingcontract freedAmount:`, await this.lockingContract.freedAmount2(this.erc20Contract.address));
+      console.log(`lockingcontract released:`, await this.lockingContract.released(this.erc20Contract.address));
+      console.log("- withdraw all 100% of lunlokeced tokens");
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 10000);
+      console.log(`lockingcontract balance after withdrawal:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log(`lockingcontract totalAllocation:`, await this.lockingContract.totalAllocation(this.erc20Contract.address));
+      console.log(`lockingcontract freedAmount:`, await this.lockingContract.freedAmount2(this.erc20Contract.address));
+      console.log(`lockingcontract released:`, await this.lockingContract.released(this.erc20Contract.address));
 
-      expect(await this.lockingContract.released(this.erc20Contract.address)).to.be.within(rangeBottom, rangeTop);
+      console.log(`Now it should be impossible for the owner to withdraw anymore tokens (they withdrew 100% after all)`);
+      console.log(`But instead, she can drain the contract by claiming another 75%!!!`);
+      console.log(`-claiming 75%...`);
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 7500);
+      console.log(`lockingcontract balance after withdrawal:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log(`lockingcontract freedAmount:`, await this.lockingContract.freedAmount2(this.erc20Contract.address));
+    });
+    it("AUDIT: ??? release is not faiar (it actually is)", async function () {
+      console.log(`owner is:`, await this.lockingContract.owner());
+      // await ethers.provider.send("evm_mine", [this.startTimestamp]);
+      console.log(`freedAmount att ime 0`, await this.lockingContract.freedAmount(this.erc20Contract.address, this.startTimestamp + 4));
+      const releaseTimestamp = this.startTimestamp + durationSeconds;
+      await ethers.provider.send("evm_mine", [this.startTimestamp + durationSeconds / 2]);
+      console.log(
+        `freedAmount halfway`,
+        await this.lockingContract.freedAmount(this.erc20Contract.address, this.startTimestamp + durationSeconds / 2)
+      );
+      console.log(`first beneficiary balance`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
+      console.log(`second beneficiary balance`, await this.erc20Contract.balanceOf(this.secondBeneficiary.address));
+      console.log(`release the tokens of the first beneficiary`);
+      await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
+      console.log(`first beneficiary balance`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
 
-      rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
-      rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
+      // console.log("withdraw 100% of the tokens halfway");
+      // await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 10000);
+      // console.log(`freedAamount`, await this.lockingContract.freedAmount(this.erc20Contract.address, this.startTimestamp + durationSeconds / 2));
+      console.log(`move the time to now`);
+      await ethers.provider.send("evm_mine", [releaseTimestamp]);
+      console.log(`freedAamount`, await this.lockingContract.freedAmount(this.erc20Contract.address, releaseTimestamp));
+      console.log(`first beneficiary balance`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
+      await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
+      console.log(`first beneficiary balance`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
+
+      console.log(`second beneficiary balance`, await this.erc20Contract.balanceOf(this.secondBeneficiary.address));
+      await this.lockingContract.connect(this.secondBeneficiary).release(this.erc20Contract.address);
+      console.log(`second beneficiary balance`, await this.erc20Contract.balanceOf(this.secondBeneficiary.address));
+
+      await this.lockingContract.connect(this.secondBeneficiary).release(this.erc20Contract.address);
+
+      await this.lockingContract.connect(this.thirdBeneficiary).release(this.erc20Contract.address);
+
       const firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
       const secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
       const thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
 
-      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      console.log(`total amount released:`, await this.lockingContract.released(this.erc20Contract.address));
+      console.log(`balance1`, firstBeneficiaryBalance);
+      console.log(secondBeneficiaryBalance);
+      console.log(thirdBeneficiaryBalance);
     });
 
     it("should withdraw no tokens after all tokens are unlocked", async function () {
