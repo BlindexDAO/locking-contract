@@ -26,10 +26,6 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     @dev Emitted whenever a withdrawal request goes through.
      */
     event ERC20Withdrawal(address indexed token, address indexed to, uint256 amount);
-    /**
-    @dev Emitted whenever a withdrawal request goes through, but there is nothing to withdraw.
-     */
-    event ERC20ZeroWithdrawal(address indexed token, address indexed to);
 
     mapping(address => uint256) private _erc20Released;
 
@@ -129,29 +125,17 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     /**
      * @dev Withdraw all the locked ERC20 tokens back to the funding address, based on the given precentage (as basis points).
      * @param token - the address of the token to withdraw
-     * @param withdrawalBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points.
-     * Emits a ERC20Withdrawal event if there are funds to withdraw, or ERC20ZeroWithdrawal if there are no funds left to withdraw.
+     * @param withdrawalAmount - The amount of tokens to withdraw out of the locked tokens.
+     * Emits a ERC20Withdrawal event if there are funds to withdraw.
      */
-    function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external onlyOwner {
+    function withdrawLockedERC20(address token, uint256 withdrawalAmount) external onlyOwner {
+        uint256 lockedAmount = totalAllocation(token) - freedAmount(token);
         require(
-            withdrawalBasisPoints > 0 && withdrawalBasisPoints <= 10000,
-            "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
+            lockedAmount >= withdrawalAmount && withdrawalAmount > 0,
+            "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
         );
-
-        uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token);
-
-        if (withdrawalAmount == 0) {
-            emit ERC20ZeroWithdrawal(token, fundingAddress);
-        } else {
-            // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
-            // We're dealing here with small enough numbers, so no need for special treatment.
-            // Therefore, we'll multiply first and only then divid to improve precision.
-            // Before solidity 0.8 it was safer to first divide and then multiply (or using Openzeppelin's SafeMath library)
-            withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
-
-            SafeERC20.safeTransfer(IERC20(token), fundingAddress, withdrawalAmount);
-            emit ERC20Withdrawal(token, fundingAddress, withdrawalAmount);
-        }
+        SafeERC20.safeTransfer(IERC20(token), fundingAddress, withdrawalAmount);
+        emit ERC20Withdrawal(token, fundingAddress, withdrawalAmount);
     }
 
     /**
