@@ -46,10 +46,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
         uint256 durationSeconds,
         uint256 cliffDuration
     ) {
-        require(
-            beneficiariesAddresses.length > 0 && beneficiariesAddresses.length <= 100,
-            "BDLockingContract: You must have at least one beneficiary and no more than 100"
-        );
+        require(beneficiariesAddresses.length == 3, "BDLockingContract: You must have exactly three beneficiaries");
         for (uint256 index = 0; index < beneficiariesAddresses.length; index++) {
             require(beneficiariesAddresses[index] != address(0), "BDLockingContract: A beneficiary is zero address");
         }
@@ -105,7 +102,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      *
      * Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
      */
-    function release(address token) external virtual onlyBeneficiary nonReentrant {
+    function release(address token) external onlyBeneficiary nonReentrant {
         uint256 releasable = freedAmount(token) - released(token);
 
         // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
@@ -135,7 +132,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      * @param withdrawalBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points.
      * Emits a ERC20Withdrawal event if there are funds to withdraw, or ERC20ZeroWithdrawal if there are no funds left to withdraw.
      */
-    function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external virtual onlyOwner {
+    function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external onlyOwner {
         require(
             withdrawalBasisPoints > 0 && withdrawalBasisPoints <= 10000,
             "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
@@ -161,7 +158,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      * @dev Calculates the amount of tokens that has already been freed.
      * The behavior is such that after the cliff period, a linear freeing curve has been implemented.
      */
-    function freedAmount(address token) public view virtual returns (uint256) {
+    function freedAmount(address token) public view returns (uint256) {
         uint256 totalTokenAllocation = totalAllocation(token);
 
         if (block.timestamp < startTimestamp + cliffDurationSeconds) {
