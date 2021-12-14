@@ -134,18 +134,21 @@ describe("BDLockingContract", function () {
   describe("Locking schedule", function () {
     it("should not free any tokens until the cliff period has ended", async function () {
       const unlockAllTimestamp = this.startTimestamp + cliffDurationSeconds - 1;
-      expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(0);
+      await ethers.provider.send("evm_mine", [unlockAllTimestamp]);
+      expect(await this.lockingContract.freedAmount(this.erc20Contract.address)).to.equal(0);
     });
 
     it("should free tokens after the cliff period has ended", async function () {
       const unlockAllTimestamp = this.startTimestamp + cliffDurationSeconds + 1;
+      await ethers.provider.send("evm_mine", [unlockAllTimestamp]);
       const expectedFreedTokens = calcExpectedFreed(erc20TotalSupply, unlockAllTimestamp, this.startTimestamp, durationSeconds);
-      expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(expectedFreedTokens);
+      expect(await this.lockingContract.freedAmount(this.erc20Contract.address)).to.equal(expectedFreedTokens);
     });
 
     it("should mark all tokens as freed after the locking duration time has passed", async function () {
       const unlockAllTimestamp = this.startTimestamp + durationSeconds + 1;
-      expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(erc20TotalSupply);
+      await ethers.provider.send("evm_mine", [unlockAllTimestamp]);
+      expect(await this.lockingContract.freedAmount(this.erc20Contract.address)).to.equal(erc20TotalSupply);
     });
   });
 
@@ -314,8 +317,7 @@ describe("BDLockingContract", function () {
     });
 
     it("should be able to withdraw 10.7% of the locked tokens", async function () {
-      const tokensAvilableForWithdrawl =
-        erc20TotalSupply - (await this.lockingContract.freedAmount(this.erc20Contract.address, await getCurrentTimestamp())).toNumber();
+      const tokensAvilableForWithdrawl = erc20TotalSupply - (await this.lockingContract.freedAmount(this.erc20Contract.address)).toNumber();
       const withdrawalBasisPoints = 1070;
 
       expect(await this.erc20Contract.connect(this.treasury).balanceOf(this.erc20Contract.address)).to.equal(0);

@@ -1,7 +1,7 @@
 // contracts/BDLockingContract.sol
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -106,7 +106,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      * Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
      */
     function release(address token) external virtual onlyBeneficiary nonReentrant {
-        uint256 releasable = freedAmount(token, block.timestamp) - released(token);
+        uint256 releasable = freedAmount(token) - released(token);
 
         // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
         // back locked funds
@@ -141,7 +141,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
             "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
         );
 
-        uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
+        uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token);
 
         if (withdrawalAmount == 0) {
             emit ERC20ZeroWithdrawal(token, fundingAddress);
@@ -161,15 +161,15 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      * @dev Calculates the amount of tokens that has already been freed.
      * The behavior is such that after the cliff period, a linear freeing curve has been implemented.
      */
-    function freedAmount(address token, uint256 timestamp) public view virtual returns (uint256) {
+    function freedAmount(address token) public view virtual returns (uint256) {
         uint256 totalTokenAllocation = totalAllocation(token);
 
-        if (timestamp < startTimestamp + cliffDurationSeconds) {
+        if (block.timestamp < startTimestamp + cliffDurationSeconds) {
             return 0;
-        } else if (timestamp > startTimestamp + lockingDurationSeconds) {
+        } else if (block.timestamp > startTimestamp + lockingDurationSeconds) {
             return totalTokenAllocation;
         } else {
-            return (totalTokenAllocation * (timestamp - startTimestamp)) / lockingDurationSeconds;
+            return (totalTokenAllocation * (block.timestamp - startTimestamp)) / lockingDurationSeconds;
         }
     }
 }
