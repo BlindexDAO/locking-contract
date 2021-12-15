@@ -59,20 +59,6 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
         fundingAddress = erc20FundingAddress;
     }
 
-    // /**
-    // @dev Modifier to protect functions that should be called only by one of the beneficiaries.
-    //  */
-    // modifier onlyBeneficiary() {
-    //     bool isBeneficiary = false;
-
-    //     for (uint256 index = 0; index < _beneficiaries.length && !isBeneficiary; index++) {
-    //         isBeneficiary = _beneficiaries[index] == msg.sender;
-    //     }
-
-    //     require(isBeneficiary, "BDLockingContract: You are not one of the allowed beneficiaries, you cannot execute this function");
-    //     _;
-    // }
-
     /**
      * @dev Getter for the beneficiaries addresses.
      */
@@ -158,6 +144,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
         } else if (block.timestamp > startTimestamp + lockingDurationSeconds) {
             return totalTokenAllocation;
         } else {
+            // Recalculating the time range since the last withdrawal
             uint256 rangeStartTimestamp = Math.max(startTimestamp, lastWithdrawalTimestamp);
             uint256 rangeDureationTimestamp = lockingDurationSeconds - (rangeStartTimestamp - startTimestamp);
             return (totalTokenAllocation * (block.timestamp - rangeStartTimestamp)) / rangeDureationTimestamp;
