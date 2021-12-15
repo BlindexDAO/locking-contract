@@ -304,6 +304,15 @@ describe("BDLockingContract", function () {
       );
     });
 
+    it("should not be able to withdraw any funds once the cliff period has ended", async function () {
+      const withdrawTimestamp = this.startTimestamp + cliffDurationSeconds + 1;
+      await ethers.provider.send("evm_mine", [withdrawTimestamp]);
+      const withdrawAmount = 100;
+      expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawAmount)).to.be.rejectedWith(
+        "BDLockingContract: Withdrawal is only possible during the cliff's duration period"
+      );
+    });
+
     it("should make sure withdraw amount is greater than 0", async function () {
       const withdrawAmount = 0;
       expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawAmount)).to.be.rejectedWith(
@@ -318,9 +327,12 @@ describe("BDLockingContract", function () {
       );
     });
 
-    it("should be able to withdraw one third of the locked tokens", async function () {
-      expect(await this.erc20Contract.connect(this.treasury).balanceOf(this.erc20Contract.address)).to.equal(0);
-      const withdrawalAmount = 20561;
+    it("should be able to withdraw one third of the locked tokens before the cliff duration ends", async function () {
+      const withdrawTimestamp = this.startTimestamp + cliffDurationSeconds - 2;
+      await ethers.provider.send("evm_mine", [withdrawTimestamp]);
+
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(0);
+      const withdrawalAmount = Math.floor(erc20TotalSupply / 3);
       const withdrawTx = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalAmount);
       expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(withdrawalAmount);
       expect(withdrawTx)
@@ -328,9 +340,23 @@ describe("BDLockingContract", function () {
         .withArgs(this.erc20Contract.address, this.treasury.address, withdrawalAmount);
     });
 
+    it("should be able to withdraw all the locked tokens before the cliff duration ends", async function () {
+      const withdrawTimestamp = this.startTimestamp + cliffDurationSeconds - 2;
+      await ethers.provider.send("evm_mine", [withdrawTimestamp]);
+
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(0);
+      const withdrawTx = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, erc20TotalSupply);
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(erc20TotalSupply);
+      expect(withdrawTx)
+        .to.emit(this.lockingContract, "ERC20Withdrawal")
+        .withArgs(this.erc20Contract.address, this.treasury.address, erc20TotalSupply);
+    });
+
     it("should be able to withdraw and then release", async function () {
-      const withdrawalAmount = 20561;
+      const withdrawalAmount = Math.round(erc20TotalSupply / 2);
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(0);
       await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalAmount);
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(withdrawalAmount);
 
       const releaseTimestamp = this.startTimestamp + durationSeconds;
       await ethers.provider.send("evm_mine", [releaseTimestamp]);
@@ -343,95 +369,11 @@ describe("BDLockingContract", function () {
 
       rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
       rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
-      const firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
-      const secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
-      const thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
 
-      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-    });
-
-    it("should withdraw no tokens after all tokens are unlocked", async function () {
-      const releaseAllTimestamp = this.startTimestamp + durationSeconds;
-      await ethers.provider.send("evm_mine", [releaseAllTimestamp]);
-      expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 10)).to.be.rejectedWith(
-        "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
-      );
-    });
-
-    // it.only("shouldn't allow to withdraw unlocked tokens", async function () {
-    //   let timestamp = this.startTimestamp + Math.round(durationSeconds / 3); // Jump to 1/3 of the total duration
-    //   await ethers.provider.send("evm_mine", [timestamp]);
-    //   await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
-    //   console.log("released", (await this.lockingContract.released(this.erc20Contract.address)).toString());
-
-    //   timestamp = this.startTimestamp + Math.round((durationSeconds * 2) / 3); // Jump to 2/3 of the total duration
-    //   await ethers.provider.send("evm_mine", [timestamp]);
-    //   const withdrawalAmount = Math.round(erc20TotalSupply / 4);
-    //   console.log("withdrawalAmount", withdrawalAmount);
-    //   await ethers.provider.send("evm_setAutomine", [false]);
-
-    //   const tx1 = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalAmount);
-    //   const tx2 = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalAmount);
-
-    //   await ethers.provider.send("evm_mine", []);
-    //   await Promise.all([tx1.wait(), tx2.wait()]);
-
-    //   console.log("balance =", await this.erc20Contract.balanceOf(this.lockingContract.address));
-    // });
-
-    it.only("AUDIT test1: withdrawying twice will fail", async function () {
-      console.log("- move TIME 1/3 of the vesting period");
-      await ethers.provider.send("evm_mine", [this.startTimestamp + durationSeconds / 3]);
-      console.log(
-        `balance of all beneficiaries`,
-        (await this.erc20Contract.balanceOf(this.firstBeneficiary.address)) * this.beneficiariesAddresses.length
-      );
-      console.log(`lockingcontract balance:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
-      console.log("- release tokns to first benefiiciary");
-      await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
-      console.log(
-        `balance of all beneficiaries`,
-        (await this.erc20Contract.balanceOf(this.firstBeneficiary.address)) * this.beneficiariesAddresses.length
-      );
-      console.log(`lockingcontract balance:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
-      console.log("- withdraw 50% of remaining locked tokens (which is 1/3 of the total initial funds)");
-      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 33333);
-      const balanceInContract = await this.erc20Contract.balanceOf(this.lockingContract.address);
-      console.log(`lockingcontract balance after withdrawal:`, balanceInContract);
-      console.log("================================================");
-      // Each beneficiary with 11,111 (*3)
-      // Owner has withdrawn 33,333
-      // 33,333 left in contract
-
-      console.log("\nMOVE TIME TO 2/3 of the vesting period");
-      await ethers.provider.send("evm_mine", [this.startTimestamp + (durationSeconds * 2) / 3]);
-
-      const totalAllocation = await this.lockingContract.totalAllocation(this.erc20Contract.address);
-      console.log(`lockingcontract totalAllocation:`, totalAllocation);
-      const freedAmount = await this.lockingContract.freedAmount(this.erc20Contract.address);
-      console.log(`lockingcontract freedAmount:`, freedAmount);
-      console.log(`lockingcontract released:`, await this.lockingContract.released(this.erc20Contract.address));
-      const withdraw = totalAllocation.sub(freedAmount).toNumber() - 1; // As the network time progresses, 1 more token will be freed by the time we'll make our withrawal
-      console.log("Withdraw all 100% of unlokeced tokens:", withdraw);
-      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdraw);
-
-      console.log(`lockingcontract balance after withdrawal:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
-      console.log(
-        `balance of all beneficiaries`,
-        (await this.erc20Contract.balanceOf(this.firstBeneficiary.address)) * this.beneficiariesAddresses.length
-      );
-      console.log(`lockingcontract totalAllocation:`, await this.lockingContract.totalAllocation(this.erc20Contract.address));
-      console.log(`lockingcontract freedAmount:`, await this.lockingContract.freedAmount(this.erc20Contract.address));
-      console.log(`lockingcontract released:`, await this.lockingContract.released(this.erc20Contract.address));
-
-      console.log(`Now it should be impossible for the owner to withdraw anymore tokens (they withdrew 100% after all)`);
-      console.log(`But instead, she can drain the contract by claiming another 75%!!!`);
-      console.log(`-claiming 75%...`);
-      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 7500);
-      console.log(`lockingcontract balance after withdrawal:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
-      console.log(`lockingcontract freedAmount:`, await this.lockingContract.freedAmount(this.erc20Contract.address));
+      expect(await this.erc20Contract.balanceOf(this.lockingContract.address)).to.be.within(0, this.beneficiariesAddresses.length);
+      expect(await this.erc20Contract.balanceOf(this.firstBeneficiary.address)).to.be.within(rangeBottom, rangeTop);
+      expect(await this.erc20Contract.balanceOf(this.secondBeneficiary.address)).to.be.within(rangeBottom, rangeTop);
+      expect(await this.erc20Contract.balanceOf(this.thirdBeneficiary.address)).to.be.within(rangeBottom, rangeTop);
     });
   });
 });

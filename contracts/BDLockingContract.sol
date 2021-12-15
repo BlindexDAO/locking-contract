@@ -34,7 +34,6 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     uint256 public immutable cliffDurationSeconds;
     uint256 public immutable startTimestamp;
     uint256 public immutable lockingDurationSeconds;
-    uint256 public lastWithdrawalTimestamp;
 
     constructor(
         address[] memory beneficiariesAddresses,
@@ -60,6 +59,20 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     }
 
     /**
+    @dev Modifier to protect functions that should be called only by one of the beneficiaries.
+     */
+    modifier onlyBeneficiary() {
+        bool isBeneficiary = false;
+
+        for (uint256 index = 0; index < _beneficiaries.length && !isBeneficiary; index++) {
+            isBeneficiary = _beneficiaries[index] == msg.sender;
+        }
+
+        require(isBeneficiary, "BDLockingContract: You are not one of the allowed beneficiaries, you cannot execute this function");
+        _;
+    }
+
+    /**
      * @dev Getter for the beneficiaries addresses.
      */
     function beneficiaries() public view returns (address[] memory) {
@@ -77,7 +90,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      * @dev Amount of the total funds deposited to the contract, minus the funds released or withdrawn from the contract.
      */
     function totalAllocation(address token) public view returns (uint256) {
-        return IERC20(token).balanceOf(address(this)) + released(token);
+        return IERC20(token).balanceOf(address(this)) + _erc20Released[token];
     }
 
     /**
@@ -85,8 +98,8 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      *
      * Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
      */
-    function release(address token) public nonReentrant {
-        uint256 releasable = freedAmount(token) - released(token);
+    function release(address token) external onlyBeneficiary nonReentrant {
+        uint256 releasable = freedAmount(token) - _erc20Released[token];
 
         // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
         // back locked funds
@@ -110,23 +123,23 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Withdraw all the locked ERC20 tokens back to the funding address, based on the given precentage (as basis points).
+     * @dev Withdraw the ERC20 tokens back to the funding address. Withdrawal is only possible during the cliff's duration period.
      * @param token - the address of the token to withdraw
      * @param withdrawalAmount - The amount of tokens to withdraw out of the locked tokens.
      * Emits a ERC20Withdrawal event if there are funds to withdraw.
      */
     function withdrawLockedERC20(address token, uint256 withdrawalAmount) external onlyOwner {
-        uint256 lockedAmount = totalAllocation(token) - freedAmount(token);
         require(
-            lockedAmount >= withdrawalAmount && withdrawalAmount > 0,
-            "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
+            block.timestamp < startTimestamp + cliffDurationSeconds,
+            "BDLockingContract: Withdrawal is only possible during the cliff's duration period"
         );
 
-        // Whenever there is a withdrawal, we'll release all the freed tokens to their beneficiaries and set the last withdrawal time for future freedAmount calculations
-        // We first release and only then set the last withrawal timestamp
-        release(token);
-        _erc20Released[token] = 0;
-        lastWithdrawalTimestamp = block.timestamp;
+        // From this point we can assume the total locked tokens is equal to the total allocation of tokens in the contract.
+        // That is because the cliff period hasn't ended just yet, so all the tokens are still locked.
+        require(
+            withdrawalAmount > 0 && withdrawalAmount <= totalAllocation(token),
+            "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
+        );
 
         SafeERC20.safeTransfer(IERC20(token), fundingAddress, withdrawalAmount);
         emit ERC20Withdrawal(token, fundingAddress, withdrawalAmount);
@@ -144,10 +157,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
         } else if (block.timestamp > startTimestamp + lockingDurationSeconds) {
             return totalTokenAllocation;
         } else {
-            // Recalculating the time range since the last withdrawal
-            uint256 rangeStartTimestamp = Math.max(startTimestamp, lastWithdrawalTimestamp);
-            uint256 rangeDureationTimestamp = lockingDurationSeconds - (rangeStartTimestamp - startTimestamp);
-            return (totalTokenAllocation * (block.timestamp - rangeStartTimestamp)) / rangeDureationTimestamp;
+            return (totalTokenAllocation * (block.timestamp - startTimestamp)) / lockingDurationSeconds;
         }
     }
 }
