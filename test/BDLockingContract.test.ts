@@ -390,23 +390,24 @@ describe("BDLockingContract", function () {
       await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
       console.log(`balance of firstBenefiiciary`, await this.erc20Contract.balanceOf(this.firstBeneficiary.address));
       console.log(`lockingcontract balance:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
-      console.log("- withdraw 50% of remaining locked tokens");
+      console.log("- withdraw 50% of remaining locked tokens (which is 1/3 of the total initial funds)");
       await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 33333);
+      const balanceInContract = await this.erc20Contract.balanceOf(this.lockingContract.address);
+      console.log(`lockingcontract balance after withdrawal:`, balanceInContract);
+      console.log("================================================");
       // Each beneficiary with 11,111 (*3)
       // Owner has withdrawn 33,333
       // 33,333 left in contract
 
       console.log("\nMOVE TIME TO 2/3 of the vesting period");
       await ethers.provider.send("evm_mine", [this.startTimestamp + (durationSeconds * 2) / 3]);
-      const balanceInContract = await this.erc20Contract.balanceOf(this.lockingContract.address);
-      console.log(`lockingcontract balance after withdrawal:`, balanceInContract);
       const totalAllocation = await this.lockingContract.totalAllocation(this.erc20Contract.address);
       console.log(`lockingcontract totalAllocation:`, totalAllocation);
       const freedAmount = await this.lockingContract.freedAmount(this.erc20Contract.address);
       console.log(`lockingcontract freedAmount:`, freedAmount);
       console.log(`lockingcontract released:`, await this.lockingContract.released(this.erc20Contract.address));
       const withdraw = totalAllocation.sub(freedAmount).toNumber();
-      console.log("\n- withdraw all 100% of lunlokeced tokens", withdraw);
+      console.log("Withdraw all 100% of unlokeced tokens", withdraw);
       await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdraw);
       console.log(`lockingcontract balance after withdrawal:`, await this.erc20Contract.balanceOf(this.lockingContract.address));
       console.log(`lockingcontract totalAllocation:`, await this.lockingContract.totalAllocation(this.erc20Contract.address));
