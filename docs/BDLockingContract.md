@@ -2,7 +2,7 @@
 
 
 
-The BDLockingContract is used to hold funds given for a certain amount of time with a cliff period. There is also an option for the owner of the contract to withdraw back all the still locked funds - this option exists to allow a DAO/the owner to change the decision on the amount of locked funds at any time. Once the cliff period is over, any of the defined beneficiaries can invoke the release() function which will split the freed funds fairly between all the beneficiaries.
+The BDLockingContract is used to hold funds given for a certain amount of time with a cliff period. There is also an option for the owner of the contract to withdraw back all the still locked funds - this option exists to allow a DAO/the owner to change the decision on the amount of locked funds during the cliff period. After that, the DAO cannot change the allocation to the team. Once the cliff period is over, any of the defined beneficiaries can invoke the release() function which will split the freed funds fairly between all the beneficiaries.
 
 ### `onlyBeneficiary()`
 
@@ -33,7 +33,7 @@ Amount of tokens already released.
 
 
 
-Amount of the total funds deposited to the contract, minus the funds released or withdrawn from the contract.
+Amount of the total funds deposited to the contract.
 
 ### `release(address token)` (external)
 
@@ -43,14 +43,14 @@ Release and send the freed ERC20 tokens to the beneficiaries in a fair split man
 
 Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
 
-### `withdrawLockedERC20(address token, uint256 withdrawalBasisPoints)` (external)
+### `withdrawLockedERC20(address token, uint256 withdrawalAmount)` (external)
 
 
 
-Withdraw all the locked ERC20 tokens back to the funding address, based on the given precentage (as basis points).
+Withdraw the ERC20 tokens back to the funding address. Withdrawal is only possible during the cliff's duration period.
 
 
-### `freedAmount(address token, uint256 timestamp) → uint256` (public)
+### `freedAmount(address token) → uint256` (public)
 
 
 
@@ -75,12 +75,6 @@ Emitted whenever a release request goes through, but there is nothing to release
 
 
 Emitted whenever a withdrawal request goes through.
-
-### `ERC20ZeroWithdrawal(address token, address to)`
-
-
-
-Emitted whenever a withdrawal request goes through, but there is nothing to withdraw.
 
 
 

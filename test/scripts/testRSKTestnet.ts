@@ -1,14 +1,6 @@
-import { ContractInterface } from "@ethersproject/contracts";
 import { formatEther } from "@ethersproject/units";
 import { ethers } from "hardhat";
 import { BDLockingContract } from "../../typechain";
-
-async function getCurrentTimestamp() {
-  const blockNumber = await ethers.provider.getBlockNumber();
-  console.log("blockNumber", blockNumber);
-  const currentBlock = await ethers.provider.getBlock(blockNumber);
-  return currentBlock.timestamp;
-}
 
 function getERC20(address: string) {
   const ERC20_ABI = JSON.stringify([
@@ -242,7 +234,6 @@ async function main() {
   const BDLockingContractAddress = "0xeb8eb3AFe11c125C92189f269F3F81B5ef22D2C6";
   const EXPLORER_BASE_PATH = "https://explorer.testnet.rsk.co";
   const explorerTransaction = `${EXPLORER_BASE_PATH}/tx/%s`;
-  const timestamp = await getCurrentTimestamp();
 
   const [deployer, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary] = await ethers.getSigners();
   console.log("deployer.address", deployer.address);
@@ -266,7 +257,7 @@ async function main() {
   console.log("Locking contract ERC20 balance", formatEther(await usdtContract.balanceOf(lockingContract.address)));
   console.log("===================================================");
   console.log("Total allocation", formatEther(await lockingContract.totalAllocation(usdtContract.address)));
-  console.log("Freed amount", formatEther(await lockingContract.freedAmount(usdtContract.address, timestamp)));
+  console.log("Freed amount", formatEther(await lockingContract.freedAmount(usdtContract.address)));
   console.log("===================================================");
   console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(firstBeneficiary.address)));
   console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(secondBeneficiary.address)));
@@ -280,7 +271,7 @@ async function main() {
   console.log("First beneficiary ERC20 balance", formatEther(await usdtContract.balanceOf(thirdBeneficiary.address)));
   console.log("===================================================");
   console.log("Locking contract ERC20 balance", formatEther(await usdtContract.balanceOf(lockingContract.address)));
-  console.log("Freed amount", formatEther(await lockingContract.freedAmount(usdtContract.address, timestamp)));
+  console.log("Freed amount", formatEther(await lockingContract.freedAmount(usdtContract.address)));
   console.log("Released so far", formatEther(await lockingContract.released(usdtContract.address)));
   console.log("===================================================");
 }

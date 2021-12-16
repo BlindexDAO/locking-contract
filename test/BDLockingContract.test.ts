@@ -56,7 +56,7 @@ describe("BDLockingContract", function () {
 
   const durationSeconds: number = 10 * 24 * 60 * 60; // 10 days
   const cliffDurationSeconds: number = 2 * 24 * 60 * 60; // 2 days
-  const erc20TotalSupply: number = 98394797;
+  const erc20TotalSupply: number = 100000;
   const percisionOffset: number = 150;
 
   beforeEach(async function () {
@@ -88,7 +88,7 @@ describe("BDLockingContract", function () {
     it("should fail to deploy when one of the beneficiaries is zero address", function () {
       expect(
         this.BDLockingContract.deploy(
-          [...this.beneficiariesAddresses, ethers.constants.AddressZero],
+          [this.firstBeneficiary.address, this.secondBeneficiary.address, ethers.constants.AddressZero],
           this.treasury.address,
           this.startTimestamp,
           durationSeconds,
@@ -99,16 +99,16 @@ describe("BDLockingContract", function () {
 
     it("should fail to deploy when the list of beneficiaries is empty", function () {
       expect(this.BDLockingContract.deploy([], this.treasury.address, this.startTimestamp, durationSeconds, cliffDurationSeconds)).to.be.rejectedWith(
-        "BDLockingContract: You must have at least one beneficiary and no more than 100"
+        "BDLockingContract: You must have exactly three beneficiaries"
       );
     });
 
-    it("should fail to deploy when there are more than 100 beneficiaries", function () {
+    it("should fail to deploy when there are more than 3 beneficiaries", function () {
       const randomAddress = ethers.Wallet.createRandom().address;
-      const beneficiaries = Array.from({ length: 101 }, () => randomAddress);
+      const beneficiaries = Array.from({ length: 4 }, () => randomAddress);
       expect(
         this.BDLockingContract.deploy(beneficiaries, this.treasury.address, this.startTimestamp, durationSeconds, cliffDurationSeconds)
-      ).to.be.rejectedWith("BDLockingContract: You must have at least one beneficiary and no more than 100");
+      ).to.be.rejectedWith("BDLockingContract: You must have exactly three beneficiaries");
     });
 
     it("should fail to deploy when cliff is greater than duration", function () {
@@ -134,18 +134,21 @@ describe("BDLockingContract", function () {
   describe("Locking schedule", function () {
     it("should not free any tokens until the cliff period has ended", async function () {
       const unlockAllTimestamp = this.startTimestamp + cliffDurationSeconds - 1;
-      expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(0);
+      await ethers.provider.send("evm_mine", [unlockAllTimestamp]);
+      expect(await this.lockingContract.freedAmount(this.erc20Contract.address)).to.equal(0);
     });
 
     it("should free tokens after the cliff period has ended", async function () {
       const unlockAllTimestamp = this.startTimestamp + cliffDurationSeconds + 1;
+      await ethers.provider.send("evm_mine", [unlockAllTimestamp]);
       const expectedFreedTokens = calcExpectedFreed(erc20TotalSupply, unlockAllTimestamp, this.startTimestamp, durationSeconds);
-      expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(expectedFreedTokens);
+      expect(await this.lockingContract.freedAmount(this.erc20Contract.address)).to.equal(expectedFreedTokens);
     });
 
     it("should mark all tokens as freed after the locking duration time has passed", async function () {
       const unlockAllTimestamp = this.startTimestamp + durationSeconds + 1;
-      expect(await this.lockingContract.freedAmount(this.erc20Contract.address, unlockAllTimestamp)).to.equal(erc20TotalSupply);
+      await ethers.provider.send("evm_mine", [unlockAllTimestamp]);
+      expect(await this.lockingContract.freedAmount(this.erc20Contract.address)).to.equal(erc20TotalSupply);
     });
   });
 
@@ -301,69 +304,76 @@ describe("BDLockingContract", function () {
       );
     });
 
-    it("should make sure basis points is greater than 0", function () {
-      expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 0)).to.be.rejectedWith(
-        "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
+    it("should not be able to withdraw any funds once the cliff period has ended", async function () {
+      const withdrawTimestamp = this.startTimestamp + cliffDurationSeconds + 1;
+      await ethers.provider.send("evm_mine", [withdrawTimestamp]);
+      const withdrawAmount = 100;
+      expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawAmount)).to.be.rejectedWith(
+        "BDLockingContract: Withdrawal is only possible during the cliff's duration period"
       );
     });
 
-    it("should make sure basis points is lower than 10000", function () {
-      expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 10001)).to.be.rejectedWith(
-        "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
+    it("should make sure withdraw amount is greater than 0", async function () {
+      const withdrawAmount = 0;
+      expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawAmount)).to.be.rejectedWith(
+        "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
       );
     });
 
-    it("should be able to withdraw 10.7% of the locked tokens", async function () {
-      const tokensAvilableForWithdrawl =
-        erc20TotalSupply - (await this.lockingContract.freedAmount(this.erc20Contract.address, await getCurrentTimestamp())).toNumber();
-      const withdrawalBasisPoints = 1070;
+    it("should make sure withdraw amount is not greater than locked amount", async function () {
+      const withdrawAmount = (await this.lockingContract.totalAllocation(this.erc20Contract.address)).add(1).toNumber();
+      expect(this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawAmount)).to.be.rejectedWith(
+        "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
+      );
+    });
 
-      expect(await this.erc20Contract.connect(this.treasury).balanceOf(this.erc20Contract.address)).to.equal(0);
+    it("should be able to withdraw one third of the locked tokens before the cliff duration ends", async function () {
+      const withdrawTimestamp = this.startTimestamp + cliffDurationSeconds - 2;
+      await ethers.provider.send("evm_mine", [withdrawTimestamp]);
 
-      const withdrawTx = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalBasisPoints);
-      const expectedTreasuryBalance = Math.floor(tokensAvilableForWithdrawl * (withdrawalBasisPoints / 10000));
-      const rangeBottom = expectedTreasuryBalance - percisionOffset;
-      const rangeTop = expectedTreasuryBalance + percisionOffset;
-
-      const withdrawalAmount = await this.erc20Contract.balanceOf(this.treasury.address);
-      expect(withdrawalAmount).to.be.within(rangeBottom, rangeTop);
-
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(0);
+      const withdrawalAmount = Math.floor(erc20TotalSupply / 3);
+      const withdrawTx = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalAmount);
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(withdrawalAmount);
       expect(withdrawTx)
         .to.emit(this.lockingContract, "ERC20Withdrawal")
         .withArgs(this.erc20Contract.address, this.treasury.address, withdrawalAmount);
     });
 
-    it("should be able to withdraw and then release", async function () {
-      const withdrawalBasisPoints = 9500;
-      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalBasisPoints);
+    it("should be able to withdraw all the locked tokens before the cliff duration ends", async function () {
+      const withdrawTimestamp = this.startTimestamp + cliffDurationSeconds - 2;
+      await ethers.provider.send("evm_mine", [withdrawTimestamp]);
 
-      // Release after duration's end - should remain about (10,000 - withdrawalBasisPoints) of the tokens minus the number of beneficiaries
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(0);
+      const withdrawTx = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, erc20TotalSupply);
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(erc20TotalSupply);
+      expect(withdrawTx)
+        .to.emit(this.lockingContract, "ERC20Withdrawal")
+        .withArgs(this.erc20Contract.address, this.treasury.address, erc20TotalSupply);
+    });
+
+    it("should be able to withdraw and then release", async function () {
+      const withdrawalAmount = Math.round(erc20TotalSupply / 2);
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(0);
+      await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, withdrawalAmount);
+      expect(await this.erc20Contract.balanceOf(this.treasury.address)).to.equal(withdrawalAmount);
+
       const releaseTimestamp = this.startTimestamp + durationSeconds;
       await ethers.provider.send("evm_mine", [releaseTimestamp]);
       await this.lockingContract.connect(this.firstBeneficiary).release(this.erc20Contract.address);
 
-      let rangeBottom: number = Math.floor(erc20TotalSupply * (1 - withdrawalBasisPoints / 10000) - this.beneficiariesAddresses.length);
-      let rangeTop: number = Math.floor(erc20TotalSupply * (1 - withdrawalBasisPoints / 10000));
+      let rangeBottom = erc20TotalSupply - withdrawalAmount - this.beneficiariesAddresses.length;
+      let rangeTop = erc20TotalSupply - withdrawalAmount;
 
       expect(await this.lockingContract.released(this.erc20Contract.address)).to.be.within(rangeBottom, rangeTop);
 
       rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
       rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
-      const firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
-      const secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
-      const thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
 
-      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-    });
-
-    it("should withdraw no tokens after all tokens are unlocked", async function () {
-      const releaseAllTimestamp = this.startTimestamp + durationSeconds;
-      await ethers.provider.send("evm_mine", [releaseAllTimestamp]);
-      const withdrawTx = await this.lockingContract.connect(this.owner).withdrawLockedERC20(this.erc20Contract.address, 10);
-      expect(await this.lockingContract.released(this.erc20Contract.address)).to.be.equal(0);
-      expect(withdrawTx).to.emit(this.lockingContract, "ERC20ZeroWithdrawal").withArgs(this.erc20Contract.address, this.treasury.address);
+      expect(await this.erc20Contract.balanceOf(this.lockingContract.address)).to.be.within(0, this.beneficiariesAddresses.length);
+      expect(await this.erc20Contract.balanceOf(this.firstBeneficiary.address)).to.be.within(rangeBottom, rangeTop);
+      expect(await this.erc20Contract.balanceOf(this.secondBeneficiary.address)).to.be.within(rangeBottom, rangeTop);
+      expect(await this.erc20Contract.balanceOf(this.thirdBeneficiary.address)).to.be.within(rangeBottom, rangeTop);
     });
   });
 });

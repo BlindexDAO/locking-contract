@@ -1,17 +1,16 @@
 // contracts/BDLockingContract.sol
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
-@dev The BDLockingContract is used to hold funds given for a certain amount of time with a cliff period. There is also an option for the owner of the contract to withdraw back all the still locked funds - this option exists to allow a DAO/the owner to change the decision on the amount of locked funds at any time. Once the cliff period is over, any of the defined beneficiaries can invoke the release() function which will split the freed funds fairly between all the beneficiaries.
+@dev The BDLockingContract is used to hold funds given for a certain amount of time with a cliff period. There is also an option for the owner of the contract to withdraw back all the still locked funds - this option exists to allow a DAO/the owner to change the decision on the amount of locked funds during the cliff period. After that, the DAO cannot change the allocation to the team. Once the cliff period is over, any of the defined beneficiaries can invoke the release() function which will split the freed funds fairly between all the beneficiaries.
  */
 contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     /**
@@ -26,10 +25,6 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     @dev Emitted whenever a withdrawal request goes through.
      */
     event ERC20Withdrawal(address indexed token, address indexed to, uint256 amount);
-    /**
-    @dev Emitted whenever a withdrawal request goes through, but there is nothing to withdraw.
-     */
-    event ERC20ZeroWithdrawal(address indexed token, address indexed to);
 
     mapping(address => uint256) private _erc20Released;
 
@@ -46,10 +41,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
         uint256 durationSeconds,
         uint256 cliffDuration
     ) {
-        require(
-            beneficiariesAddresses.length > 0 && beneficiariesAddresses.length <= 100,
-            "BDLockingContract: You must have at least one beneficiary and no more than 100"
-        );
+        require(beneficiariesAddresses.length == 3, "BDLockingContract: You must have exactly three beneficiaries");
         for (uint256 index = 0; index < beneficiariesAddresses.length; index++) {
             require(beneficiariesAddresses[index] != address(0), "BDLockingContract: A beneficiary is zero address");
         }
@@ -94,10 +86,10 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Amount of the total funds deposited to the contract, minus the funds released or withdrawn from the contract.
+     * @dev Amount of the total funds deposited to the contract.
      */
     function totalAllocation(address token) public view returns (uint256) {
-        return IERC20(token).balanceOf(address(this)) + released(token);
+        return IERC20(token).balanceOf(address(this)) + _erc20Released[token];
     }
 
     /**
@@ -105,12 +97,8 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      *
      * Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
      */
-    function release(address token) external virtual onlyBeneficiary nonReentrant {
-        uint256 releasable = freedAmount(token, block.timestamp) - released(token);
-
-        // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
-        // back locked funds
-        releasable = Math.min(IERC20(token).balanceOf(address(this)), releasable);
+    function release(address token) external onlyBeneficiary nonReentrant {
+        uint256 releasable = freedAmount(token) - _erc20Released[token];
 
         if (releasable == 0) {
             emit ERC20ZeroReleased(token);
@@ -130,46 +118,41 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Withdraw all the locked ERC20 tokens back to the funding address, based on the given precentage (as basis points).
+     * @dev Withdraw the ERC20 tokens back to the funding address. Withdrawal is only possible during the cliff's duration period.
      * @param token - the address of the token to withdraw
-     * @param withdrawalBasisPoints - A basis points representation of the percentage we would like to withdraw out of the locked tokens. E.g. 1.85% would be 185 basis points.
-     * Emits a ERC20Withdrawal event if there are funds to withdraw, or ERC20ZeroWithdrawal if there are no funds left to withdraw.
+     * @param withdrawalAmount - The amount of tokens to withdraw out of the locked tokens.
+     * Emits a ERC20Withdrawal event if there are funds to withdraw.
      */
-    function withdrawLockedERC20(address token, uint256 withdrawalBasisPoints) external virtual onlyOwner {
+    function withdrawLockedERC20(address token, uint256 withdrawalAmount) external onlyOwner {
         require(
-            withdrawalBasisPoints > 0 && withdrawalBasisPoints <= 10000,
-            "BDLockingContract: The percentage of the withdrawal must be between 1 to 10,000 basis points"
+            block.timestamp < startTimestamp + cliffDurationSeconds,
+            "BDLockingContract: Withdrawal is only possible during the cliff's duration period"
         );
 
-        uint256 withdrawalAmount = totalAllocation(token) - freedAmount(token, block.timestamp);
+        // From this point we can assume the total locked tokens is equal to the total allocation of tokens in the contract (which is just the balanceOf the token in the contract).
+        // That is because the cliff period hasn't ended just yet, so all the tokens are still locked.
+        require(
+            withdrawalAmount > 0 && withdrawalAmount <= totalAllocation(token),
+            "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
+        );
 
-        if (withdrawalAmount == 0) {
-            emit ERC20ZeroWithdrawal(token, fundingAddress);
-        } else {
-            // In solidity 0.8+ overflow is automatically being checked and an error being thrown if needed and the transaction will fail.
-            // We're dealing here with small enough numbers, so no need for special treatment.
-            // Therefore, we'll multiply first and only then divid to improve precision.
-            // Before solidity 0.8 it was safer to first divide and then multiply (or using Openzeppelin's SafeMath library)
-            withdrawalAmount = (withdrawalAmount * withdrawalBasisPoints) / 10000;
-
-            SafeERC20.safeTransfer(IERC20(token), fundingAddress, withdrawalAmount);
-            emit ERC20Withdrawal(token, fundingAddress, withdrawalAmount);
-        }
+        SafeERC20.safeTransfer(IERC20(token), fundingAddress, withdrawalAmount);
+        emit ERC20Withdrawal(token, fundingAddress, withdrawalAmount);
     }
 
     /**
      * @dev Calculates the amount of tokens that has already been freed.
      * The behavior is such that after the cliff period, a linear freeing curve has been implemented.
      */
-    function freedAmount(address token, uint256 timestamp) public view virtual returns (uint256) {
+    function freedAmount(address token) public view returns (uint256) {
         uint256 totalTokenAllocation = totalAllocation(token);
 
-        if (timestamp < startTimestamp + cliffDurationSeconds) {
+        if (block.timestamp < startTimestamp + cliffDurationSeconds) {
             return 0;
-        } else if (timestamp > startTimestamp + lockingDurationSeconds) {
+        } else if (block.timestamp > startTimestamp + lockingDurationSeconds) {
             return totalTokenAllocation;
         } else {
-            return (totalTokenAllocation * (timestamp - startTimestamp)) / lockingDurationSeconds;
+            return (totalTokenAllocation * (block.timestamp - startTimestamp)) / lockingDurationSeconds;
         }
     }
 }
