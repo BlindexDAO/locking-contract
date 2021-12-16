@@ -35,6 +35,12 @@ Amount of tokens already released.
 
 Amount of the total funds deposited to the contract.
 
+### `setFundingAddress(address newFundingAddress)` (external)
+
+
+
+
+
 ### `release(address token)` (external)
 
 
@@ -75,6 +81,12 @@ Emitted whenever a release request goes through, but there is nothing to release
 
 
 Emitted whenever a withdrawal request goes through.
+
+### `SetFundingAddress(address fundingAddress)`
+
+
+
+Emitted whenever a new funding address is being assigned.
 
 
 
