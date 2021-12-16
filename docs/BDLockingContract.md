@@ -33,7 +33,7 @@ Amount of tokens already released.
 
 
 
-Amount of the total funds deposited to the contract, minus the funds released or withdrawn from the contract.
+Amount of the total funds deposited to the contract.
 
 ### `release(address token)` (external)
 
