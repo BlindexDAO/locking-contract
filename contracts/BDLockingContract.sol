@@ -87,7 +87,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Amount of the total funds deposited to the contract, minus the funds released or withdrawn from the contract.
+     * @dev Amount of the total funds deposited to the contract.
      */
     function totalAllocation(address token) public view returns (uint256) {
         return IERC20(token).balanceOf(address(this)) + _erc20Released[token];
@@ -100,10 +100,6 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      */
     function release(address token) external onlyBeneficiary nonReentrant {
         uint256 releasable = freedAmount(token) - _erc20Released[token];
-
-        // We might have less to release than what we have in the balance of the contract because of the owner's option to withdraw
-        // back locked funds
-        releasable = Math.min(IERC20(token).balanceOf(address(this)), releasable);
 
         if (releasable == 0) {
             emit ERC20ZeroReleased(token);
@@ -134,7 +130,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
             "BDLockingContract: Withdrawal is only possible during the cliff's duration period"
         );
 
-        // From this point we can assume the total locked tokens is equal to the total allocation of tokens in the contract.
+        // From this point we can assume the total locked tokens is equal to the total allocation of tokens in the contract (which is just the balanceOf the token in the contract).
         // That is because the cliff period hasn't ended just yet, so all the tokens are still locked.
         require(
             withdrawalAmount > 0 && withdrawalAmount <= totalAllocation(token),
