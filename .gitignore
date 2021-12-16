@@ -12,3 +12,4 @@ typechain
 .env
 docs/SampleERC20.md
 deployments/localhost
+.npmrc

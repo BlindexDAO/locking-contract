@@ -17,19 +17,26 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     @dev Emitted whenever a release request goes through.
      */
     event ERC20Released(address indexed token, address indexed to, uint256 amount);
+
     /**
     @dev Emitted whenever a release request goes through, but there is nothing to release.
      */
     event ERC20ZeroReleased(address indexed token);
+
     /**
     @dev Emitted whenever a withdrawal request goes through.
      */
     event ERC20Withdrawal(address indexed token, address indexed to, uint256 amount);
 
+    /**
+    @dev Emitted whenever a new funding address is being assigned.
+    */
+    event SetFundingAddress(address indexed fundingAddress);
+
     mapping(address => uint256) private _erc20Released;
 
     address[] private _beneficiaries;
-    address public immutable fundingAddress;
+    address public fundingAddress;
     uint256 public immutable cliffDurationSeconds;
     uint256 public immutable startTimestamp;
     uint256 public immutable lockingDurationSeconds;
@@ -90,6 +97,12 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      */
     function totalAllocation(address token) public view returns (uint256) {
         return IERC20(token).balanceOf(address(this)) + _erc20Released[token];
+    }
+
+    function setFundingAddress(address newFundingAddress) external onlyOwner {
+        require(newFundingAddress != address(0), "Funding address cannot be set to the zero address");
+        fundingAddress = newFundingAddress;
+        emit SetFundingAddress(newFundingAddress);
     }
 
     /**

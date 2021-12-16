@@ -129,6 +129,20 @@ describe("BDLockingContract", function () {
         )
       ).to.be.rejectedWith("BDLockingContract: Funding is zero address");
     });
+
+    it("should fail to change funding address to zero address", async function () {
+      expect(this.lockingContract.setFundingAddress(ethers.constants.AddressZero)).to.be.rejectedWith(
+        "Funding address cannot be set to the zero address"
+      );
+    });
+
+    it("should change funding address", async function () {
+      expect(await this.lockingContract.fundingAddress()).to.equal(this.treasury.address);
+      const newFundingAddress = ethers.Wallet.createRandom().address;
+      const tx = await this.lockingContract.setFundingAddress(newFundingAddress);
+      expect(await this.lockingContract.fundingAddress()).to.equal(newFundingAddress);
+      expect(tx).to.emit(this.lockingContract, "SetFundingAddress").withArgs(newFundingAddress);
+    });
   });
 
   describe("Locking schedule", function () {
