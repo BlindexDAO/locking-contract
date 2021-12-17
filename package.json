@@ -1,6 +1,6 @@
 {
   "name": "@blindex/locking-contract",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This contract is separated from the Blindex's protocol contracts as it's meant to be a contract to hold the code contributors/maintainers in a dedicated contract with a well-defined tokens time locking system.",
   "main": "index.js",
   "devDependencies": {
@@ -27,6 +27,7 @@
     "moment": "^2.29.1",
     "prettier": "^2.5.0",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "rimraf": "^3.0.2",
     "solc-0.8": "npm:solc@^0.8.10",
     "solidity-coverage": "^0.7.17",
     "solidity-docgen": "^0.5.16",
@@ -43,7 +44,8 @@
     "node": "npx hardhat node",
     "format": "prettier --write . --loglevel silent",
     "deploy:rsk-testnet": "hardhat --network rsk-testnet deploy",
-    "docs": "npx solidity-docgen --solc-module solc-0.8"
+    "docs": "npx solidity-docgen --solc-module solc-0.8",
+    "prepublishOnly": "npx rimraf ./artifacts && npx rimraf ./cache && npm run compile && npm run format && npm run docs"
   },
   "keywords": [],
   "author": "Blindex",
