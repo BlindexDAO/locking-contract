@@ -31,7 +31,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     /**
     @dev Emitted whenever a new funding address is being set.
     */
-    event SetFundingAddress(address indexed fundingAddress);
+    event SetFundingAddress(address indexed previousFundingAddress, address indexed newFundingAddress);
 
     mapping(address => uint256) private _erc20Released;
 
@@ -99,10 +99,13 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
         return IERC20(token).balanceOf(address(this)) + _erc20Released[token];
     }
 
+    /**
+     * @dev Setter for the funding address.
+     */
     function setFundingAddress(address newFundingAddress) external onlyOwner {
         require(newFundingAddress != address(0), "Funding address cannot be set to the zero address");
+        emit SetFundingAddress(fundingAddress, newFundingAddress);
         fundingAddress = newFundingAddress;
-        emit SetFundingAddress(newFundingAddress);
     }
 
     /**

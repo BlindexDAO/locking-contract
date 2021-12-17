@@ -141,7 +141,7 @@ describe("BDLockingContract", function () {
       const newFundingAddress = ethers.Wallet.createRandom().address;
       const tx = await this.lockingContract.setFundingAddress(newFundingAddress);
       expect(await this.lockingContract.fundingAddress()).to.equal(newFundingAddress);
-      expect(tx).to.emit(this.lockingContract, "SetFundingAddress").withArgs(newFundingAddress);
+      expect(tx).to.emit(this.lockingContract, "SetFundingAddress").withArgs(this.treasury.address, newFundingAddress);
     });
   });
 
