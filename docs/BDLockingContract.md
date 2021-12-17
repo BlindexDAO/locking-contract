@@ -86,7 +86,7 @@ Emitted whenever a withdrawal request goes through.
 
 
 
-Emitted whenever a new funding address is being assigned.
+Emitted whenever a new funding address is being set.
 
 
 
