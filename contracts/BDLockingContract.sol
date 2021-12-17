@@ -29,7 +29,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     event ERC20Withdrawal(address indexed token, address indexed to, uint256 amount);
 
     /**
-    @dev Emitted whenever a new funding address is being assigned.
+    @dev Emitted whenever a new funding address is being set.
     */
     event SetFundingAddress(address indexed fundingAddress);
 
