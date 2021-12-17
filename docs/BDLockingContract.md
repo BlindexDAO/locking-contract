@@ -39,7 +39,7 @@ Amount of the total funds deposited to the contract.
 
 
 
-
+Setter for the funding address.
 
 ### `release(address token)` (external)
 
@@ -82,7 +82,7 @@ Emitted whenever a release request goes through, but there is nothing to release
 
 Emitted whenever a withdrawal request goes through.
 
-### `SetFundingAddress(address fundingAddress)`
+### `SetFundingAddress(address previousFundingAddress, address newFundingAddress)`
 
 
 
