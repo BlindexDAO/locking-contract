@@ -58,6 +58,12 @@ const config: HardhatUserConfig = {
       timeout: 6_000_000,
       gasPrice: 79240000,
     },
+    rsk: {
+      url: "https://public-node.rsk.co",
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY!, process.env.TREASURY_PRIVATE_KEY!],
+      timeout: 6_000_000,
+      gasPrice: 79240000,
+    },
   },
   namedAccounts: {
     DEPLOYER: 0,
