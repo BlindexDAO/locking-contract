@@ -1,0 +1,12 @@
+cache/
+coverage/
+coverage.json
+dist/
+docs/SampleERC20.md
+deployments/
+deploy/
+.husky/
+.github/
+.npmrc
+.env
+.git/
