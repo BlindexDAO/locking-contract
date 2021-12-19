@@ -59,10 +59,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/blindexgit/locking-contract.git"
+    "url": "https://github.com/BlindexDAO/locking-contract"
   },
   "bugs": {
-    "url": "https://github.com/blindexgit/locking-contract/issues"
+    "url": "https://github.com/BlindexDAO/locking-contract/issues"
   },
-  "homepage": "https://github.com/blindexgit/locking-contract#readme"
+  "homepage": "https://github.com/BlindexDAO/locking-contract#readme"
 }
