@@ -4,24 +4,24 @@ import moment from "moment";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log("Deploy BDLockingContract...");
-  const [deployer, treasury, firstBeneficiary, secondBeneficiary, thirdBeneficiary] = await hre.ethers.getSigners();
+  const [deployer, treasury] = await hre.ethers.getSigners(); // TODO: Set treasury and deployer before deployment to production
 
   const startTimestamp = moment().unix();
-  const duration = moment.duration(2, "years").asSeconds();
+  const durationSeconds = moment.duration(2, "years").asSeconds();
   const cliffSeconds = moment.duration(1, "year").asSeconds();
+  const beneficiaries = [
+    "0xd7ED3F0ff6823e000e08E79C340697545c5925a3",
+    "0xb34B2168D5D869F18A4Fd63eC11287F72c302251",
+    "0x1a99B0B8E5b4c02bB3C682355288c3d7DAEA227B",
+  ];
 
-  const BDLockingContract = await hre.ethers.getContractFactory("BDLockingContract");
-  const lockingContract = await BDLockingContract.connect(deployer).deploy(
-    [firstBeneficiary.address, secondBeneficiary.address, thirdBeneficiary.address],
-    treasury.address,
-    startTimestamp,
-    duration,
-    cliffSeconds
-  );
-  await lockingContract.deployed();
+  const deployedLockingContract = await hre.deployments.deploy("BDLockingContract", {
+    from: deployer.address,
+    contract: "BDLockingContract",
+    args: [beneficiaries, treasury.address, startTimestamp, durationSeconds, cliffSeconds],
+  });
 
-  console.log("BDLockingContract deployed to:", lockingContract.address);
-
+  console.log("BDLockingContract deployed to:", deployedLockingContract.address);
   return true;
 };
 func.id = __filename;

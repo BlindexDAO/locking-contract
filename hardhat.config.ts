@@ -11,16 +11,19 @@ import path from "path";
 const envPath = path.join(__dirname, "./.env");
 dotenv.config({ path: envPath });
 
-let rskTestnetAccount: string[] = [];
+let rskTestnetAccounts: string[] = [];
+let rskAccounts: string[] = [];
 
 if (process.env.DEPLOYER_PRIVATE_KEY) {
-  rskTestnetAccount = [
+  rskTestnetAccounts = [
     process.env.DEPLOYER_PRIVATE_KEY!,
     process.env.TREASURY_PRIVATE_KEY!,
     process.env.USER1_PRIVATE_KEY!,
     process.env.USER2_PRIVATE_KEY!,
     process.env.USER3_PRIVATE_KEY!,
   ];
+
+  rskAccounts = [process.env.DEPLOYER_PRIVATE_KEY!, process.env.TREASURY_PRIVATE_KEY!];
 }
 
 /**
@@ -54,7 +57,13 @@ const config: HardhatUserConfig = {
     hardhat: {},
     "rsk-testnet": {
       url: "https://public-node.testnet.rsk.co",
-      accounts: rskTestnetAccount,
+      accounts: rskTestnetAccounts,
+      timeout: 6_000_000,
+      gasPrice: 79240000,
+    },
+    rsk: {
+      url: "https://public-node.rsk.co",
+      accounts: rskAccounts,
       timeout: 6_000_000,
       gasPrice: 79240000,
     },
