@@ -3,6 +3,7 @@
 - [ ] Fixing a bug
 - [ ] A new Feature
 - [ ] Techdebt
+- [ ] General Task
 
 ## What your PR is all about?
 
