@@ -20,7 +20,7 @@ if (process.env.DEPLOYER_PRIVATE_KEY) {
     process.env.TREASURY_PRIVATE_KEY!,
     process.env.USER1_PRIVATE_KEY!,
     process.env.USER2_PRIVATE_KEY!,
-    process.env.USER3_PRIVATE_KEY!,
+    process.env.USER3_PRIVATE_KEY!
   ];
 
   rskAccounts = [process.env.DEPLOYER_PRIVATE_KEY!, process.env.TREASURY_PRIVATE_KEY!];
@@ -38,20 +38,20 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
-          },
-        },
-      },
-    ],
+            runs: 200
+          }
+        }
+      }
+    ]
   },
   typechain: {
     outDir: "typechain",
     target: "ethers-v5",
-    externalArtifacts: [],
+    externalArtifacts: []
   },
   gasReporter: {
     currency: "USD",
-    coinmarketcap: process.env.CMC_TOKEN,
+    coinmarketcap: process.env.CMC_TOKEN
   },
   networks: {
     hardhat: {},
@@ -59,22 +59,22 @@ const config: HardhatUserConfig = {
       url: "https://public-node.testnet.rsk.co",
       accounts: rskTestnetAccounts,
       timeout: 6_000_000,
-      gasPrice: 79240000,
+      gasPrice: 79240000
     },
     rsk: {
       url: "https://public-node.rsk.co",
       accounts: rskAccounts,
       timeout: 6_000_000,
-      gasPrice: 79240000,
-    },
+      gasPrice: 79240000
+    }
   },
   namedAccounts: {
     DEPLOYER: 0,
     TREASURY: 1,
     USER1: 2,
     USER2: 3,
-    USER3: 4,
-  },
+    USER3: 4
+  }
 };
 
 export default config;

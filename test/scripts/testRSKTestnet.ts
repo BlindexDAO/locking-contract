@@ -11,35 +11,35 @@ function getERC20(address: string) {
       outputs: [
         {
           name: "",
-          type: "string",
-        },
+          type: "string"
+        }
       ],
       payable: false,
       stateMutability: "view",
-      type: "function",
+      type: "function"
     },
     {
       constant: false,
       inputs: [
         {
           name: "_spender",
-          type: "address",
+          type: "address"
         },
         {
           name: "_value",
-          type: "uint256",
-        },
+          type: "uint256"
+        }
       ],
       name: "approve",
       outputs: [
         {
           name: "",
-          type: "bool",
-        },
+          type: "bool"
+        }
       ],
       payable: false,
       stateMutability: "nonpayable",
-      type: "function",
+      type: "function"
     },
     {
       constant: true,
@@ -48,39 +48,39 @@ function getERC20(address: string) {
       outputs: [
         {
           name: "",
-          type: "uint256",
-        },
+          type: "uint256"
+        }
       ],
       payable: false,
       stateMutability: "view",
-      type: "function",
+      type: "function"
     },
     {
       constant: false,
       inputs: [
         {
           name: "_from",
-          type: "address",
+          type: "address"
         },
         {
           name: "_to",
-          type: "address",
+          type: "address"
         },
         {
           name: "_value",
-          type: "uint256",
-        },
+          type: "uint256"
+        }
       ],
       name: "transferFrom",
       outputs: [
         {
           name: "",
-          type: "bool",
-        },
+          type: "bool"
+        }
       ],
       payable: false,
       stateMutability: "nonpayable",
-      type: "function",
+      type: "function"
     },
     {
       constant: true,
@@ -89,31 +89,31 @@ function getERC20(address: string) {
       outputs: [
         {
           name: "",
-          type: "uint8",
-        },
+          type: "uint8"
+        }
       ],
       payable: false,
       stateMutability: "view",
-      type: "function",
+      type: "function"
     },
     {
       constant: true,
       inputs: [
         {
           name: "_owner",
-          type: "address",
-        },
+          type: "address"
+        }
       ],
       name: "balanceOf",
       outputs: [
         {
           name: "balance",
-          type: "uint256",
-        },
+          type: "uint256"
+        }
       ],
       payable: false,
       stateMutability: "view",
-      type: "function",
+      type: "function"
     },
     {
       constant: true,
@@ -122,63 +122,63 @@ function getERC20(address: string) {
       outputs: [
         {
           name: "",
-          type: "string",
-        },
+          type: "string"
+        }
       ],
       payable: false,
       stateMutability: "view",
-      type: "function",
+      type: "function"
     },
     {
       constant: false,
       inputs: [
         {
           name: "_to",
-          type: "address",
+          type: "address"
         },
         {
           name: "_value",
-          type: "uint256",
-        },
+          type: "uint256"
+        }
       ],
       name: "transfer",
       outputs: [
         {
           name: "",
-          type: "bool",
-        },
+          type: "bool"
+        }
       ],
       payable: false,
       stateMutability: "nonpayable",
-      type: "function",
+      type: "function"
     },
     {
       constant: true,
       inputs: [
         {
           name: "_owner",
-          type: "address",
+          type: "address"
         },
         {
           name: "_spender",
-          type: "address",
-        },
+          type: "address"
+        }
       ],
       name: "allowance",
       outputs: [
         {
           name: "",
-          type: "uint256",
-        },
+          type: "uint256"
+        }
       ],
       payable: false,
       stateMutability: "view",
-      type: "function",
+      type: "function"
     },
     {
       payable: true,
       stateMutability: "payable",
-      type: "fallback",
+      type: "fallback"
     },
     {
       anonymous: false,
@@ -186,21 +186,21 @@ function getERC20(address: string) {
         {
           indexed: true,
           name: "owner",
-          type: "address",
+          type: "address"
         },
         {
           indexed: true,
           name: "spender",
-          type: "address",
+          type: "address"
         },
         {
           indexed: false,
           name: "value",
-          type: "uint256",
-        },
+          type: "uint256"
+        }
       ],
       name: "Approval",
-      type: "event",
+      type: "event"
     },
     {
       anonymous: false,
@@ -208,22 +208,22 @@ function getERC20(address: string) {
         {
           indexed: true,
           name: "from",
-          type: "address",
+          type: "address"
         },
         {
           indexed: true,
           name: "to",
-          type: "address",
+          type: "address"
         },
         {
           indexed: false,
           name: "value",
-          type: "uint256",
-        },
+          type: "uint256"
+        }
       ],
       name: "Transfer",
-      type: "event",
-    },
+      type: "event"
+    }
   ]);
 
   return new ethers.Contract(address.toLowerCase(), ERC20_ABI, ethers.provider);

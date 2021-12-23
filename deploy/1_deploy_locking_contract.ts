@@ -12,13 +12,13 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const beneficiaries = [
     "0xd7ED3F0ff6823e000e08E79C340697545c5925a3",
     "0xb34B2168D5D869F18A4Fd63eC11287F72c302251",
-    "0x1a99B0B8E5b4c02bB3C682355288c3d7DAEA227B",
+    "0x1a99B0B8E5b4c02bB3C682355288c3d7DAEA227B"
   ];
 
   const deployedLockingContract = await hre.deployments.deploy("BDLockingContract", {
     from: deployer.address,
     contract: "BDLockingContract",
-    args: [beneficiaries, treasury.address, startTimestamp, durationSeconds, cliffSeconds],
+    args: [beneficiaries, treasury.address, startTimestamp, durationSeconds, cliffSeconds]
   });
 
   console.log("BDLockingContract deployed to:", deployedLockingContract.address);
