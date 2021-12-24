@@ -44,6 +44,7 @@
     "node": "npx hardhat node",
     "format": "prettier --write . --loglevel silent",
     "deploy:rsk-testnet": "hardhat --network rsk-testnet deploy",
+    "deploy:rsk-mainnet": "hardhat --network rsk deploy",
     "docs": "npx solidity-docgen --solc-module solc-0.8",
     "prepublishOnly": "npx rimraf ./artifacts && npx rimraf ./cache && npm run compile && npm run format && npm run docs"
   },

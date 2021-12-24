@@ -23,7 +23,7 @@ if (process.env.DEPLOYER_PRIVATE_KEY) {
     process.env.USER3_PRIVATE_KEY!
   ];
 
-  rskAccounts = [process.env.DEPLOYER_PRIVATE_KEY!, process.env.TREASURY_PRIVATE_KEY!];
+  rskAccounts = [process.env.DEPLOYER_PRIVATE_KEY!];
 }
 
 /**

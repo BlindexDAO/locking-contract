@@ -4,7 +4,7 @@ import moment from "moment";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log("Deploy BDLockingContract...");
-  const [deployer, treasury] = await hre.ethers.getSigners(); // TODO: Set treasury and deployer before deployment to production
+  const [deployer] = await hre.ethers.getSigners();
 
   const startTimestamp = moment().unix();
   const durationSeconds = moment.duration(2, "years").asSeconds();
@@ -15,10 +15,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "0x1a99B0B8E5b4c02bB3C682355288c3d7DAEA227B"
   ];
 
+  const treasuryAddress = process.env.TREASURY_ADDRESS;
+  console.log("Treasury address:", treasuryAddress);
+  if (!treasuryAddress) {
+    throw new Error("Treasury wallet address is missing");
+  }
+
+  console.log("Deploying...");
   const deployedLockingContract = await hre.deployments.deploy("BDLockingContract", {
     from: deployer.address,
     contract: "BDLockingContract",
-    args: [beneficiaries, treasury.address, startTimestamp, durationSeconds, cliffSeconds]
+    args: [beneficiaries, treasuryAddress, startTimestamp, durationSeconds, cliffSeconds]
   });
 
   console.log("BDLockingContract deployed to:", deployedLockingContract.address);
