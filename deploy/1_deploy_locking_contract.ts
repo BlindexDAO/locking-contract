@@ -15,17 +15,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "0x1a99B0B8E5b4c02bB3C682355288c3d7DAEA227B"
   ];
 
-  const treasuryMultisig = process.env.TREASURY_ADDRESS;
-  console.log("Treasury multisig address:", treasuryMultisig);
-  if (!treasuryMultisig) {
-    throw new Error("no multisigTreasury");
+  const treasuryAddress = process.env.TREASURY_ADDRESS;
+  console.log("Treasury address:", treasuryAddress);
+  if (!treasuryAddress) {
+    throw new Error("Treasury wallet address is missing");
   }
 
   console.log("Deploying...");
   const deployedLockingContract = await hre.deployments.deploy("BDLockingContract", {
     from: deployer.address,
     contract: "BDLockingContract",
-    args: [beneficiaries, treasuryMultisig, startTimestamp, durationSeconds, cliffSeconds]
+    args: [beneficiaries, treasuryAddress, startTimestamp, durationSeconds, cliffSeconds]
   });
 
   console.log("BDLockingContract deployed to:", deployedLockingContract.address);
