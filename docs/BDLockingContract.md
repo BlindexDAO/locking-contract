@@ -17,12 +17,6 @@ The BDLockingContract is used to hold funds given for a certain amount of time w
 
 Getter for the beneficiaries addresses.
 
-### `released() → uint256` (public)
-
-
-
-Amount of tokens already released.
-
 ### `totalAllocation() → uint256` (public)
 
 
