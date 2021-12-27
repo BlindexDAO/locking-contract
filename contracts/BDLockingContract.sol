@@ -38,14 +38,13 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      */
     event BeneficiaryRemoved(address indexed beneficiaryAddress);
 
-    uint256 private _tokensReleased;
-
     address[] private _beneficiaries;
+    uint256 public tokensReleased;
     address public fundingAddress;
     uint256 public immutable cliffDurationSeconds;
     uint256 public immutable startTimestamp;
     uint256 public immutable lockingDurationSeconds;
-    address public immutable lockedTokenAddress;
+    address public immutable tokenAddress;
 
     constructor(
         address[] memory beneficiariesAddresses,
@@ -71,7 +70,7 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
         startTimestamp = start;
         lockingDurationSeconds = durationSeconds;
         fundingAddress = erc20FundingAddress;
-        lockedTokenAddress = erc20token;
+        tokenAddress = erc20token;
     }
 
     /**
@@ -82,17 +81,10 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Amount of tokens already released.
-     */
-    function released() public view returns (uint256) {
-        return _tokensReleased;
-    }
-
-    /**
      * @dev Amount of the total funds deposited to the contract.
      */
     function totalAllocation() public view returns (uint256) {
-        return IERC20(lockedTokenAddress).balanceOf(address(this)) + _tokensReleased;
+        return IERC20(tokenAddress).balanceOf(address(this)) + tokensReleased;
     }
 
     /**
@@ -110,7 +102,10 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      * Emits a BeneficiaryRemoved event on removal.
      */
     function removeBeneficiary(address beneficiaryAddress) external onlyOwner {
-        require(_beneficiaries.length > 1, "BDLockingContract: You can't remove the last beneficiary");
+        require(
+            _beneficiaries.length > 1,
+            "BDLockingContract: The beneficiary address provided does not match any of the beneficiaries stored by this contract"
+        );
 
         bool isBeneficiary = false;
         uint256 index;
@@ -134,21 +129,21 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      * Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
      */
     function release() public nonReentrant {
-        uint256 releasable = freedAmount() - _tokensReleased;
+        uint256 releasable = freedAmount() - tokensReleased;
 
         if (releasable == 0) {
-            emit ERC20ZeroReleased(lockedTokenAddress);
+            emit ERC20ZeroReleased(tokenAddress);
         } else {
             // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
             // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
             // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
             // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
             uint256 roundedDownFairSplitReleasable = releasable / _beneficiaries.length;
-            _tokensReleased += roundedDownFairSplitReleasable * _beneficiaries.length;
+            tokensReleased += roundedDownFairSplitReleasable * _beneficiaries.length;
 
             for (uint256 index = 0; index < _beneficiaries.length; index++) {
-                SafeERC20.safeTransfer(IERC20(lockedTokenAddress), _beneficiaries[index], roundedDownFairSplitReleasable);
-                emit ERC20Released(lockedTokenAddress, _beneficiaries[index], roundedDownFairSplitReleasable);
+                SafeERC20.safeTransfer(IERC20(tokenAddress), _beneficiaries[index], roundedDownFairSplitReleasable);
+                emit ERC20Released(tokenAddress, _beneficiaries[index], roundedDownFairSplitReleasable);
             }
         }
     }
@@ -171,8 +166,8 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
             "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
         );
 
-        SafeERC20.safeTransfer(IERC20(lockedTokenAddress), fundingAddress, withdrawalAmount);
-        emit ERC20Withdrawal(lockedTokenAddress, fundingAddress, withdrawalAmount);
+        SafeERC20.safeTransfer(IERC20(tokenAddress), fundingAddress, withdrawalAmount);
+        emit ERC20Withdrawal(tokenAddress, fundingAddress, withdrawalAmount);
     }
 
     /**

@@ -239,7 +239,9 @@ describe("BDLockingContract", function () {
       expect(tx).to.emit(this.lockingContract, "BeneficiaryRemoved").withArgs(beneficiaries[0]);
       expect(tx).to.emit(this.lockingContract, "ERC20ZeroReleased").withArgs(this.erc20Contract.address);
 
-      expect(this.lockingContract.removeBeneficiary(beneficiaries[0])).to.be.rejectedWith("BDLockingContract: You can't remove the last beneficiary");
+      expect(this.lockingContract.removeBeneficiary(beneficiaries[0])).to.be.rejectedWith(
+        "BDLockingContract: The beneficiary address provided does not match any of the beneficiaries stored by this contract"
+      );
     });
 
     it("should release funds on remove beneficiary", async function () {
@@ -256,7 +258,7 @@ describe("BDLockingContract", function () {
       let rangeBottom = expectedFreed - percisionOffset;
       let rangeTop = expectedFreed + percisionOffset;
 
-      expect(await this.lockingContract.released()).to.be.within(rangeBottom, rangeTop);
+      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
 
       rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
       rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
@@ -308,7 +310,7 @@ describe("BDLockingContract", function () {
       const releaseTx = await this.lockingContract.connect(this.thirdBeneficiary).release();
       expect(releaseTx).to.emit(this.lockingContract, "ERC20ZeroReleased").withArgs(this.erc20Contract.address);
 
-      expect(await this.lockingContract.released()).to.equal(0);
+      expect(await this.lockingContract.tokensReleased()).to.equal(0);
     });
 
     it("should release tokens after the cliff period has ended", async function () {
@@ -320,7 +322,7 @@ describe("BDLockingContract", function () {
       let rangeBottom = expectedFreed - percisionOffset;
       let rangeTop = expectedFreed + percisionOffset;
 
-      expect(await this.lockingContract.released()).to.be.within(rangeBottom, rangeTop);
+      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
 
       rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
       rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
@@ -353,7 +355,7 @@ describe("BDLockingContract", function () {
       let rangeBottom = expectedFreed - percisionOffset;
       let rangeTop = expectedFreed + percisionOffset;
 
-      expect(await this.lockingContract.released()).to.be.within(rangeBottom, rangeTop);
+      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
 
       rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
       rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
@@ -385,7 +387,7 @@ describe("BDLockingContract", function () {
       rangeBottom = expectedFreed - percisionOffset;
       rangeTop = expectedFreed + percisionOffset;
 
-      expect(await this.lockingContract.released()).to.be.within(rangeBottom, rangeTop);
+      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
 
       rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
       rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
@@ -416,7 +418,7 @@ describe("BDLockingContract", function () {
       let rangeBottom = erc20TotalSupply - this.beneficiariesAddresses.length;
       let rangeTop = erc20TotalSupply;
 
-      expect(await this.lockingContract.released()).to.be.within(rangeBottom, rangeTop);
+      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
 
       rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
       rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
@@ -506,7 +508,7 @@ describe("BDLockingContract", function () {
       let rangeBottom = erc20TotalSupply - withdrawalAmount - this.beneficiariesAddresses.length;
       let rangeTop = erc20TotalSupply - withdrawalAmount;
 
-      expect(await this.lockingContract.released()).to.be.within(rangeBottom, rangeTop);
+      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
 
       rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
       rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
