@@ -33,20 +33,26 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     */
     event SetFundingAddress(address indexed previousFundingAddress, address indexed newFundingAddress);
 
-    mapping(address => uint256) private _erc20Released;
+    /**
+    @dev Emitted whenever a beneficiary is removed.
+     */
+    event BeneficiaryRemoved(address indexed beneficiaryAddress);
 
     address[] private _beneficiaries;
+    uint256 public tokensReleased;
     address public fundingAddress;
     uint256 public immutable cliffDurationSeconds;
     uint256 public immutable startTimestamp;
     uint256 public immutable lockingDurationSeconds;
+    address public immutable tokenAddress;
 
     constructor(
         address[] memory beneficiariesAddresses,
         address erc20FundingAddress,
         uint256 start,
         uint256 durationSeconds,
-        uint256 cliffDuration
+        uint256 cliffDuration,
+        address erc20token
     ) {
         require(beneficiariesAddresses.length == 3, "BDLockingContract: You must have exactly three beneficiaries");
         for (uint256 index = 0; index < beneficiariesAddresses.length; index++) {
@@ -57,25 +63,14 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
 
         require(erc20FundingAddress != address(0), "BDLockingContract: Funding is zero address");
 
+        require(erc20token != address(0), "BDLockingContract: Locked token is zero address");
+
         _beneficiaries = beneficiariesAddresses;
         cliffDurationSeconds = cliffDuration;
         startTimestamp = start;
         lockingDurationSeconds = durationSeconds;
         fundingAddress = erc20FundingAddress;
-    }
-
-    /**
-    @dev Modifier to protect functions that should be called only by one of the beneficiaries.
-     */
-    modifier onlyBeneficiary() {
-        bool isBeneficiary = false;
-
-        for (uint256 index = 0; index < _beneficiaries.length && !isBeneficiary; index++) {
-            isBeneficiary = _beneficiaries[index] == msg.sender;
-        }
-
-        require(isBeneficiary, "BDLockingContract: You are not one of the allowed beneficiaries, you cannot execute this function");
-        _;
+        tokenAddress = erc20token;
     }
 
     /**
@@ -86,26 +81,51 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Amount of tokens already released.
-     */
-    function released(address token) public view returns (uint256) {
-        return _erc20Released[token];
-    }
-
-    /**
      * @dev Amount of the total funds deposited to the contract.
      */
-    function totalAllocation(address token) public view returns (uint256) {
-        return IERC20(token).balanceOf(address(this)) + _erc20Released[token];
+    function totalAllocation() public view returns (uint256) {
+        return IERC20(tokenAddress).balanceOf(address(this)) + tokensReleased;
     }
 
     /**
      * @dev Setter for the funding address.
      */
     function setFundingAddress(address newFundingAddress) external onlyOwner {
-        require(newFundingAddress != address(0), "Funding address cannot be set to the zero address");
+        require(newFundingAddress != address(0), "BDLockingContract: Funding address cannot be set to the zero address");
         emit SetFundingAddress(fundingAddress, newFundingAddress);
         fundingAddress = newFundingAddress;
+    }
+
+    /**
+     * @dev Removes a beneficiary by address.
+     * Calling release before removing the beneficiary to ensure fair split.
+     * Emits a BeneficiaryRemoved event on removal.
+     */
+    function removeBeneficiary(address beneficiaryAddress) external onlyOwner {
+        require(
+            _beneficiaries.length > 1,
+            "BDLockingContract: The beneficiary address provided does not match any of the beneficiaries stored by this contract"
+        );
+
+        bool isBeneficiary = false;
+        uint256 index;
+        for (index = 0; index < _beneficiaries.length && !isBeneficiary; index++) {
+            isBeneficiary = _beneficiaries[index] == beneficiaryAddress;
+        }
+
+        require(isBeneficiary, "BDLockingContract: Invalid beneficiary address");
+
+        // We are aware the this function doesn't follow the Checks-Effects-Interactions pattern as we're calling the release
+        // function and only after that changing the state of the beneficiaries. We had some thoughts to split the release function
+        // so we will be able to release the funds fairly after removing the beneficiary, but decided eventually to keep it as it,
+        // since the release function marked as nonReentrant, so this attack vector will fail anyway on the second release.
+        // Adding to that we know the erc20 token contract in this case (BDX), so we're safe.
+        release();
+
+        _beneficiaries[index - 1] = _beneficiaries[_beneficiaries.length - 1];
+        _beneficiaries.pop();
+
+        emit BeneficiaryRemoved(beneficiaryAddress);
     }
 
     /**
@@ -113,33 +133,32 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
      *
      * Emits a ERC20Released event if there are funds to release, or ERC20ZeroReleased if there are no funds left to release.
      */
-    function release(address token) external onlyBeneficiary nonReentrant {
-        uint256 releasable = freedAmount(token) - _erc20Released[token];
+    function release() public nonReentrant {
+        uint256 releasable = freedAmount() - tokensReleased;
 
         if (releasable == 0) {
-            emit ERC20ZeroReleased(token);
+            emit ERC20ZeroReleased(tokenAddress);
         } else {
             // Solidity rounds down the numbers when one of them is uint[256] so that we'll never fail the transaction
             // due to exceeding the number of available tokens. When there are few tokens left in the contract, we can either keep
             // them there or transfer more funds to the contract so that the remaining funds will be divided equally between the beneficiaries.
             // At most, the amount of tokens that might be left behind is just a little under the number of beneficiaries.
             uint256 roundedDownFairSplitReleasable = releasable / _beneficiaries.length;
-            _erc20Released[token] += roundedDownFairSplitReleasable * _beneficiaries.length;
+            tokensReleased += roundedDownFairSplitReleasable * _beneficiaries.length;
 
             for (uint256 index = 0; index < _beneficiaries.length; index++) {
-                SafeERC20.safeTransfer(IERC20(token), _beneficiaries[index], roundedDownFairSplitReleasable);
-                emit ERC20Released(token, _beneficiaries[index], roundedDownFairSplitReleasable);
+                SafeERC20.safeTransfer(IERC20(tokenAddress), _beneficiaries[index], roundedDownFairSplitReleasable);
+                emit ERC20Released(tokenAddress, _beneficiaries[index], roundedDownFairSplitReleasable);
             }
         }
     }
 
     /**
      * @dev Withdraw the ERC20 tokens back to the funding address. Withdrawal is only possible during the cliff's duration period.
-     * @param token - the address of the token to withdraw
      * @param withdrawalAmount - The amount of tokens to withdraw out of the locked tokens.
      * Emits a ERC20Withdrawal event if there are funds to withdraw.
      */
-    function withdrawLockedERC20(address token, uint256 withdrawalAmount) external onlyOwner {
+    function withdrawLockedERC20(uint256 withdrawalAmount) external onlyOwner {
         require(
             block.timestamp < startTimestamp + cliffDurationSeconds,
             "BDLockingContract: Withdrawal is only possible during the cliff's duration period"
@@ -148,20 +167,20 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
         // From this point we can assume the total locked tokens is equal to the total allocation of tokens in the contract (which is just the balanceOf the token in the contract).
         // That is because the cliff period hasn't ended just yet, so all the tokens are still locked.
         require(
-            withdrawalAmount > 0 && withdrawalAmount <= totalAllocation(token),
+            withdrawalAmount > 0 && withdrawalAmount <= totalAllocation(),
             "BDLockingContract: The withdrawal amount must be between 1 to the amount of locked tokens"
         );
 
-        SafeERC20.safeTransfer(IERC20(token), fundingAddress, withdrawalAmount);
-        emit ERC20Withdrawal(token, fundingAddress, withdrawalAmount);
+        SafeERC20.safeTransfer(IERC20(tokenAddress), fundingAddress, withdrawalAmount);
+        emit ERC20Withdrawal(tokenAddress, fundingAddress, withdrawalAmount);
     }
 
     /**
      * @dev Calculates the amount of tokens that has already been freed.
      * The behavior is such that after the cliff period, a linear freeing curve has been implemented.
      */
-    function freedAmount(address token) public view returns (uint256) {
-        uint256 totalTokenAllocation = totalAllocation(token);
+    function freedAmount() public view returns (uint256) {
+        uint256 totalTokenAllocation = totalAllocation();
 
         if (block.timestamp < startTimestamp + cliffDurationSeconds) {
             return 0;
