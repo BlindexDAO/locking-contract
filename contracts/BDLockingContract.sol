@@ -115,6 +115,11 @@ contract BDLockingContract is Context, Ownable, ReentrancyGuard {
 
         require(isBeneficiary, "BDLockingContract: Invalid beneficiary address");
 
+        // We are aware the this function doesn't follow the Checks-Effects-Interactions pattern as we're calling the release
+        // function and only after that changing the state of the beneficiaries. We had some thoughts to split the release function
+        // so we will be able to release the funds fairly after removing the beneficiary, but decided eventually to keep it as it,
+        // since the release function marked as nonReentrant, so this attack vector will fail anyway on the second release.
+        // Adding to that we know the erc20 token contract in this case (BDX), so we're safe.
         release();
 
         _beneficiaries[index - 1] = _beneficiaries[_beneficiaries.length - 1];

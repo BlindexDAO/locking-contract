@@ -222,7 +222,7 @@ describe("BDLockingContract", function () {
       expect(newBeneficiaries.indexOf(thirdBeneficiary)).to.eq(-1);
     });
 
-    it("should fail to remove the last beneficiary", async function () {
+    it("should remove two beneficiaries out of 3 but reject when removing the last one", async function () {
       const beneficiaries = [...this.beneficiariesAddresses];
 
       let tx = await this.lockingContract.removeBeneficiary(beneficiaries[1]);
@@ -255,20 +255,16 @@ describe("BDLockingContract", function () {
       expect(newBeneficiaries.indexOf(beneficiaries[0])).to.eq(-1);
 
       const expectedFreed = calcExpectedFreed(erc20TotalSupply, releaseTimestamp, this.startTimestamp, durationSeconds);
-      let rangeBottom = expectedFreed - percisionOffset;
-      let rangeTop = expectedFreed + percisionOffset;
+      expect((await this.lockingContract.tokensReleased()).toNumber()).to.be.closeTo(expectedFreed, percisionOffset);
 
-      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
-
-      rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
-      rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
+      const expectEachBeneficiary = Math.floor(expectedFreed / this.beneficiariesAddresses.length);
       const firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
       const secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
       const thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
 
-      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(firstBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
+      expect(secondBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
+      expect(thirdBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
 
       expect(tx)
         .to.emit(this.lockingContract, "ERC20Released")
@@ -319,20 +315,16 @@ describe("BDLockingContract", function () {
       const releaseTx = await this.lockingContract.connect(this.secondBeneficiary).release();
 
       const expectedFreed = calcExpectedFreed(erc20TotalSupply, releaseTimestamp, this.startTimestamp, durationSeconds);
-      let rangeBottom = expectedFreed - percisionOffset;
-      let rangeTop = expectedFreed + percisionOffset;
+      expect((await this.lockingContract.tokensReleased()).toNumber()).to.be.closeTo(expectedFreed, percisionOffset);
 
-      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
-
-      rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
-      rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
+      const expectEachBeneficiary = Math.floor(expectedFreed / this.beneficiariesAddresses.length);
       const firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
       const secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
       const thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
 
-      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(firstBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
+      expect(secondBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
+      expect(thirdBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
 
       expect(releaseTx)
         .to.emit(this.lockingContract, "ERC20Released")
@@ -352,20 +344,16 @@ describe("BDLockingContract", function () {
       let releaseTx = await this.lockingContract.connect(this.secondBeneficiary).release();
 
       let expectedFreed = calcExpectedFreed(erc20TotalSupply, releaseTimestamp, this.startTimestamp, durationSeconds);
-      let rangeBottom = expectedFreed - percisionOffset;
-      let rangeTop = expectedFreed + percisionOffset;
+      expect((await this.lockingContract.tokensReleased()).toNumber()).to.be.closeTo(expectedFreed, percisionOffset);
 
-      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
-
-      rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
-      rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
+      let expectEachBeneficiary = Math.floor(expectedFreed / this.beneficiariesAddresses.length);
       const firstBeneficiaryBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
       const secondBeneficiaryBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
       const thirdBeneficiaryBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
 
-      expect(firstBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(secondBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
-      expect(thirdBeneficiaryBalance).to.be.within(rangeBottom, rangeTop);
+      expect(firstBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
+      expect(secondBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
+      expect(thirdBeneficiaryBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
 
       expect(releaseTx)
         .to.emit(this.lockingContract, "ERC20Released")
@@ -384,20 +372,16 @@ describe("BDLockingContract", function () {
       releaseTx = await this.lockingContract.connect(this.secondBeneficiary).release();
 
       expectedFreed = calcExpectedFreed(erc20TotalSupply, releaseTimestamp, this.startTimestamp, durationSeconds);
-      rangeBottom = expectedFreed - percisionOffset;
-      rangeTop = expectedFreed + percisionOffset;
+      expect((await this.lockingContract.tokensReleased()).toNumber()).to.be.closeTo(expectedFreed, percisionOffset);
 
-      expect(await this.lockingContract.tokensReleased()).to.be.within(rangeBottom, rangeTop);
-
-      rangeBottom = Math.floor(rangeBottom / this.beneficiariesAddresses.length);
-      rangeTop = Math.floor(rangeTop / this.beneficiariesAddresses.length);
+      expectEachBeneficiary = Math.floor(expectedFreed / this.beneficiariesAddresses.length);
       const firstBeneficiarySecondReleaseBalance = await this.erc20Contract.balanceOf(this.firstBeneficiary.address);
       const secondBeneficiarySecondReleaseBalance = await this.erc20Contract.balanceOf(this.secondBeneficiary.address);
       const thirdBeneficiarySecondReleaseBalance = await this.erc20Contract.balanceOf(this.thirdBeneficiary.address);
 
-      expect(firstBeneficiarySecondReleaseBalance).to.be.within(rangeBottom, rangeTop);
-      expect(secondBeneficiarySecondReleaseBalance).to.be.within(rangeBottom, rangeTop);
-      expect(thirdBeneficiarySecondReleaseBalance).to.be.within(rangeBottom, rangeTop);
+      expect(firstBeneficiarySecondReleaseBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
+      expect(secondBeneficiarySecondReleaseBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
+      expect(thirdBeneficiarySecondReleaseBalance.toNumber()).to.be.closeTo(expectEachBeneficiary, percisionOffset);
 
       expect(releaseTx)
         .to.emit(this.lockingContract, "ERC20Released")
