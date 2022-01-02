@@ -21,11 +21,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     throw new Error("Treasury wallet address is missing");
   }
 
+  const bdxContractAddress = process.env.BDX_CONTRACT_ADDRESS;
+  console.log("BDX contract address:", bdxContractAddress);
+  if (!bdxContractAddress) {
+    throw new Error("BDX contract address is missing");
+  }
+
   console.log("Deploying...");
   const deployedLockingContract = await hre.deployments.deploy("BDLockingContract", {
     from: deployer.address,
     contract: "BDLockingContract",
-    args: [beneficiaries, treasuryAddress, startTimestamp, durationSeconds, cliffSeconds]
+    args: [beneficiaries, treasuryAddress, startTimestamp, durationSeconds, cliffSeconds, bdxContractAddress]
   });
 
   console.log("BDLockingContract deployed to:", deployedLockingContract.address);
