@@ -77,7 +77,7 @@ npm run test:gas
 - [RSK explorer](https://explorer.testnet.rsk.co/)
 - [USDT](https://explorer.testnet.rsk.co/address/0x4d5a316d23ebe168d8f887b4447bf8dbfa4901cc) - useful for ERC20 testings
 
-# Join us
+## Join us
 
 💻 [Website](https://blindex.io)
 
