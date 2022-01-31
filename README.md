@@ -1,3 +1,5 @@
+![MEDIUM HEADER 1500x750px_](https://user-images.githubusercontent.com/1577655/147810830-1b200126-47d1-4a78-a95a-45a8c8a105cc.png)
+
 # Locking Contract
 
 This contract is separated from the Blindex's protocol contracts as it's meant to be a contract to hold the code contributors/maintainers in a dedicated contract with a well-defined tokens time locking system.
@@ -74,3 +76,17 @@ npm run test:gas
 - [Sovryn faucet](https://faucet.sovryn.app/#) - RBTC, WRBTC, SOV, DOC, USDT, RENBTC
 - [RSK explorer](https://explorer.testnet.rsk.co/)
 - [USDT](https://explorer.testnet.rsk.co/address/0x4d5a316d23ebe168d8f887b4447bf8dbfa4901cc) - useful for ERC20 testings
+
+# Join us
+
+💻 [Website](https://blindex.io)
+
+📱 [App](https://app.blindex.io/)
+
+📜 [Docs](https://docs.blindex.io/)
+
+♣️ [Discord](https://discord.gg/dbN2bmJ42u)
+
+💬 [Telegram](https://t.me/BlinDEXio)
+
+🤳 [Twitter](https://twitter.com/BlinDEXio)
