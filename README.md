@@ -87,6 +87,6 @@ npm run test:gas
 
 ♣️ [Discord](https://discord.gg/dbN2bmJ42u)
 
-💬 [Telegram](https://t.me/BlinDEXio)
+💬 [Telegram](https://t.me/BlinDEX_io)
 
 🤳 [Twitter](https://twitter.com/BlinDEXio)
